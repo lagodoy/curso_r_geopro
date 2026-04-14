@@ -1,0 +1,9 @@
+---
+title: "Operações aritméticas entre bandas"
+format: html
+execute:
+  freeze: true  # never re-render during project render
+number-sections: true  
+---
+
+## Exemplo: Indices de vegetação

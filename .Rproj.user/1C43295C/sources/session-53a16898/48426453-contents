@@ -1,0 +1,7 @@
+---
+title: "Agregação e Desagregacão Espacial"
+format: html
+execute:
+  freeze: true  # never re-render during project render
+number-sections: true
+---

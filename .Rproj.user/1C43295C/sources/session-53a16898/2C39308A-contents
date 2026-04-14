@@ -1,0 +1,14 @@
+# Introdução {.unnumbered}
+
+
+Aqui são apresentadas demonstrações práticas de processamento de dados espaciais em R. As aulas apresentadas são inspiradas no conteúdo das disciplinas PTR3311 e PTR3312 da Escola Politécnica da Universidade de São Paulo. Basicamente são os roteiros apresentados nas disciplinas convertidos para a linguagem de programação R.
+
+Cada um dos roteiros aqui apresentados possuem um tema como foco central, mas podem trazer tópicos extras que são apresentados conforme conveniẽncia.
+
+A ideia é que os roteiros sejam fluídos e sem excesso de detalhes.
+
+Nao ha rigor de estilo para os codigos, pois a intenççao é educacional e não código para ser colocado diretamente em produção.
+
+Todos os tutoriais aqui apresentados seguem um padrão que apresenta primeiramente as bibliotecas e dados utilizados naquela prática e em seguinda uma seção com a preparação dos dados para a sequência. Embora pareça desnecessário, esse fomrmato foi adotado para mostrar diferentes tipos de fontes de dados e como elas devem ser tratadas previamente, além de reforçar conteúdos das lições anteriores e permitir, em muitos casos, saltar lições sem precisar fazer as anteriores, embora elas contenham uma certa progressividade nos conteúdos.
+
+Algumas práticas são mais curtas que outras, ou seja, não foi definido um tempo padrão para todas. Isso não significa que você não possa dividí-las em partes para estudar.

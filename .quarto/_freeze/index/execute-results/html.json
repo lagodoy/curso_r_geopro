@@ -1,0 +1,12 @@
+{
+  "hash": "761ddfec58d89e538c0aa1ecd24721e8",
+  "result": {
+    "engine": "jupyter",
+    "markdown": "# Prefácio {.unnumbered}\n\nEste livro visa preencher lacunas no conhecimento prático de aplicações de geoprocessamento\nem R.\n\nA ideia de escrever estar lições práticas em linguagens de programação surgiu de sugestão\nde alunos das disciplinas PTR3311/PTR3312 e PTR3512 dos cursos de Engenharia Civil e\nEngenharia Ambiental da Escola Politécnica da USP.\n\nMuito do apresentado neste livro já era de meu conhecimento, porém nunca foi\nsistematizado no formato de práticas de laboratório para aprendizado, de forma\nsimilar ao que ocorre nas disciplinas.\n\nEste livro não cobre a parte teórica das disciplinas, sendo um dever de qualquer \nestudante  consultar livros da área. Sugiro Longley, Costra e, caso esteja cursando uma disciplina relacionada na universidade, pode seguir a sugestao dos seus professores.\n\n::: {#e32a12bc .cell execution_count=1}\n``` {.python .cell-code}\nx = 1 + 1\nif x > 1:\n  print('maior')\n```\n\n::: {.cell-output .cell-output-stdout}\n```\nmaior\n```\n:::\n:::\n\n\n",
+    "supporting": [
+      "index_files"
+    ],
+    "filters": [],
+    "includes": {}
+  }
+}

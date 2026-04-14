@@ -1,0 +1,105 @@
+---
+title: "Sistemas de Referencia de Coordenadas"
+format: html
+execute:
+  freeze: true  # never re-render during project render
+number-sections: true 
+---
+
+## Introdução
+
+## Bibliotecas e dados utlizados nesta lição
+
+-   *mapview*
+-   *sf*
+
+Você deve encontrar uma base de dados no formato *shapefile*. Sugiro o uso do *GeoSampa*, onde algumas bases já vêm com imperfeições que serão úteis neste tutorial.
+
+##Vetor
+
+### Preparação dos dados
+
+Para executar o tutorial, primeiro você deve entrar na pasta onde estão os arquivos do *shapefile* e remover o com extensão *.prj*.
+
+```{r include=FALSE}
+pasta_dados <- '../lab_01/dados/'
+unlink(paste0(pasta_dados, 'SAD69-96_SHP_cortico/SAD69-96_SHP_cortico.prj'))
+caminho_vetor_entrada <- paste0(pasta_dados, 'SAD69-96_SHP_cortico/SAD69-96_SHP_cortico.shp')
+dados_vetor <- sf::read_sf(caminho_vetor_entrada)
+```
+
+### Verificando o CRS de um conjunto de dados vetoriais
+
+*sf::st_crs()* é utilizada para checar o *CRS* associado com os dados. Observe o erro que ocorre por falta do arquivo *.prj*, que indica qual deve ser o *CRS* da base de dados. 
+
+```{r}
+sf::st_crs(dados_vetor) 
+```
+
+É possível visualizar o atributo com o *EPSG* usando chamando diretamente o elemento *input* da lista, usando o operador *\$*. Note que na última linha dessa sequência demonstra que a função *st_crs()* pode ser aplicada diretamente nas geometrias associadas ao *dataframe* espacial.
+
+```{r}
+sf::st_crs(dados_vetor)$input 
+sf::st_crs(dados_vetor$geometry)$input
+```
+
+Agora podemos visualizar os dados no *mapview* e verificar que estão deslocados em relação ao mapa base.
+
+```{r}
+mapview::mapview(dados_vetor) 
+```
+
+### Atribuindo um CRS a um conjunto de dados vetoriais
+
+Como não há CRS associado, precisamos ajustá-lo, mas primeiro vamos checar os detalhes do *EPSG 5533* (*SAD69(96) - 23S*) com a mesma função utilizada para o *dataframe* espacial anteriormente. Note como o método consegue lidar com parâmetros de tipo diferente.
+
+No exemplo apresentado, o *CRS* é o SAD69(96) / UTM zone 23S: https://epsg.io/5533. 
+
+```{r}
+crs <- sf::st_crs(5533) 
+crs$input
+crs$proj4string
+```
+
+Ajusta o CRS.
+
+```{r}
+sf::st_crs(dados_vetor) <- 5533 
+```
+
+```{r}
+sf::st_crs(dados_vetor) 
+sf::st_crs(dados_vetor)$input
+sf::st_crs(dados_vetor)$proj4string 
+sf::st_crs(dados_vetor$geometry)$input 
+```
+
+```{r}
+mapview::mapview(dados_vetor)
+```
+
+### Transformação de coordenadas em dados vetoriais
+
+O exemplo a seguir demonstra como fazer a transformação (reproject) dos dados com a função *sf::st_transform()*, usando como novo *CRS* o *SIRGAS 2000 / UTM zone 23S* (https://epsg.io/31983).
+
+```{r}
+dados_vetor_sirgas <- sf::st_transform(dados_vetor, 31983)
+```
+
+Exibindo as duas camadas no mapa, é possível verificar que elas estão perfeitamente sobrepostas. 
+
+```{r}
+mapview::mapview(dados_vetor_sirgas) + mapview::mapview(dados_vetor)
+```
+
+### Finalizando o tutorial
+
+Salve os dados com *CRS* definitivamente e releia o arquivo para checar que ele está ajustado corretamente.
+
+## Raster
+
+
+```{r}
+terra::crs(imagem_mux,proj=TRUE, describe=FALSE)
+terra::crs(imagem_mux,proj=FALSE, describe=TRUE)
+```

@@ -1,0 +1,14 @@
+---
+title: "Parte 2 - Trabalhando com dados Vetoriais"
+format: html
+execute:
+  freeze: true  # never re-render during project render
+---
+
+As lições apresentadas nesta parte cobrem conceitos de armazeamento, manipulação e processamento de dados provenientes de Sensoriamento Remoto (SR) e outros produtos armazenados como dados do tipo Raster.
+
+Alguns conceitos que serão apresentados são:
+
+-   a
+
+-   b

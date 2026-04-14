@@ -1,0 +1,10 @@
+---
+title: "Tipos de dados armazenados"
+format: html
+execute:
+  freeze: true  # never re-render during project render
+number-sections: true  
+---
+
+## Vetor
+## Raster

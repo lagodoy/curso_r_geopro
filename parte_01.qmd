@@ -1,0 +1,16 @@
+---
+title: "Parte 1 - Fundamentos de Dados Espaciais"
+format: html
+execute:
+  freeze: true  # never re-render during project render
+---
+
+Parte 1
+
+As lições apresentadas nesta parte cobrem conceitos de armazeamento, manipulação e processamento de dados espaciais e outros produtos armazenados como dados do tipo Raster.
+
+Alguns conceitos que serão apresentados são:
+
+-   a
+
+-   b

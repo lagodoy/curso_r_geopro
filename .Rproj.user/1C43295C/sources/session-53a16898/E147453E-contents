@@ -1,0 +1,7 @@
+---
+title: "Agregação e Desagregacão Espacial (Mudança de Resolução e Sampling)"
+format: html
+execute:
+  freeze: true  # never re-render during project render
+number-sections: true 
+---

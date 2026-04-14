@@ -1,0 +1,4 @@
+"0","saude_alta_complexidade <- dados_saude[(dados_saude$SEGMENTO %in% c('SAUGM', 'SAUGE'))"
+"0","                                       & (dados_saude$TIPO =='HOSP' | dados_saude$TIPO == 'PATEN'), ]"
+"2","Error: object 'dados_saude' not found
+"

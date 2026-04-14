@@ -1,0 +1,10 @@
+---
+title: "Visualização de Dados"
+format: html
+execute:
+  freeze: true  # never re-render during project render
+number-sections: true  
+---
+
+## Vetor
+## Raster

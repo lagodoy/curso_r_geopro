@@ -1,0 +1,8 @@
+---
+title: "Tutorial: Tratamento avançado de imagens em raster"
+format: html
+execute:
+  freeze: true  # never re-render during project render
+number-sections: true  
+---
+
