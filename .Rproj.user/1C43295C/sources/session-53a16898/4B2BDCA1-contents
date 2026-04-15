@@ -1,0 +1,9 @@
+---
+title: "Operações Espaciais Básicas"
+format: html
+execute:
+  freeze: true  # never re-render during project render
+number-sections: true  
+---
+
+## Dissolve

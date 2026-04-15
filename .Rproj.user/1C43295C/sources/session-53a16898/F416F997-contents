@@ -1,16 +1,9 @@
 # Prefácio {.unnumbered}
 
-Este livro visa preencher lacunas no conhecimento prático para aplicações de geoprocessamento
-na linguagem R.
+Este livro visa preencher lacunas no conhecimento prático para aplicações de geoprocessamento na linguagem R.
 
-A ideia de escrever estes tutoriais em linguagens de programação surgiu a partir de pedido
-de alunos das disciplinas PTR3311/PTR3312 e PTR3512 dos cursos de Engenharia Civil e
-Engenharia Ambiental da Escola Politécnica da USP.
+A ideia de escrever estes tutoriais em linguagens de programação surgiu a partir de pedido de alunos das disciplinas PTR3311/PTR3312 e PTR3512 dos cursos de Engenharia Civil e Engenharia Ambiental da Escola Politécnica da USP.
 
-Muito do apresentado neste livro já era de meu conhecimento, porém nunca foi
-sistematizado no formato de práticas de laboratório para aprendizado, de forma
-similar ao que ocorre nas disciplinas.
+Muito do apresentado neste livro já era de meu conhecimento, porém nunca foi sistematizado no formato de práticas de laboratório para aprendizado, de forma similar ao que ocorre nas disciplinas.
 
-Este livro não cobre a parte teórica das disciplinas, sendo um dever de qualquer 
-estudante  consultar livros da área. Sugiro Longley, Costra e, caso esteja cursando uma disciplina relacionada na universidade, pode seguir a sugestao dos seus professores.
-
+Este livro não cobre a parte teórica das disciplinas, sendo um dever de qualquer estudante consultar livros da área. Sugiro Longley, Costra e, caso esteja cursando uma disciplina relacionada na universidade, pode seguir a sugestao dos seus professores.
