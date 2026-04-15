@@ -28,7 +28,7 @@ caminho_vetor_entrada <- paste0(pasta_dados, 'SAD69-96_SHP_cortico/SAD69-96_SHP_
 dados_vetor <- sf::read_sf(caminho_vetor_entrada)
 ```
 
-### Verificando o CRS de um conjunto de dados vetoriais
+### Verificando o *CRS* de um conjunto de dados vetoriais
 
 *sf::st_crs()* é utilizada para checar o *CRS* associado com os dados. Observe o erro que ocorre por falta do arquivo *.prj*, que indica qual deve ser o *CRS* da base de dados. 
 
@@ -49,11 +49,11 @@ Agora podemos visualizar os dados no *mapview* e verificar que estão deslocados
 mapview::mapview(dados_vetor) 
 ```
 
-### Atribuindo um CRS a um conjunto de dados vetoriais
+### Atribuindo um *CRS* a um conjunto de dados vetoriais
 
-Como não há CRS associado, precisamos ajustá-lo, mas primeiro vamos checar os detalhes do *EPSG 5533* (*SAD69(96) - 23S*) com a mesma função utilizada para o *dataframe* espacial anteriormente. Note como o método consegue lidar com parâmetros de tipo diferente.
+Como não há *CRS* associado, precisamos ajustá-lo, mas primeiro vamos checar os detalhes do *EPSG 5533* (*SAD69(96) - 23S*) com a mesma função utilizada para o *dataframe* espacial anteriormente. Note como o método consegue lidar com parâmetros de tipo diferente.
 
-No exemplo apresentado, o *CRS* é o SAD69(96) / UTM zone 23S: https://epsg.io/5533. 
+No exemplo apresentado, o *CRS* é o *SAD69(96) / UTM zone 23S*: https://epsg.io/5533. 
 
 ```{r}
 crs <- sf::st_crs(5533) 
@@ -99,7 +99,16 @@ Salve os dados com *CRS* definitivamente e releia o arquivo para checar que ele 
 ## Raster
 
 
+### Verificando o *CRS* de *raster*
+
+Utilizando a função *terra::crs()* em um *SpatRaster*, obtemos as informações do *CRS* da fonte de dados.
+
 ```{r}
-terra::crs(imagem_mux,proj=TRUE, describe=FALSE)
-terra::crs(imagem_mux,proj=FALSE, describe=TRUE)
+terra::crs(imagem_mux, proj=TRUE, describe=FALSE)
+terra::crs(imagem_mux, proj=FALSE, describe=TRUE)
 ```
+
+### Atribuindo um *CRS* a um *raster*
+
+### Transformação de coordenadas em *raster*
+

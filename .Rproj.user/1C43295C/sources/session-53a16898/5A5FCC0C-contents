@@ -80,7 +80,7 @@ Para saber qual a área de estudos, após ter baixado os dados adequadamente. Ca
 extensao_poly <- terra::vect(extensao)
 ```
 
-Note que não ha sistema de referencias e portanto é necessário atribuir um CRS aos dados.
+Note que não ha sistema de referencias e portanto é necessário atribuir um *CRS* aos dados.
 
 ```{r}
 terra::crs(extensao_poly) <- "epsg:32723"
@@ -237,7 +237,7 @@ metadados_xml_red_mux %>% xml2::xml_find_all("//availableBands/\*") %>% xml2::xm
 
 #### Projeção Cartográfica
 
-CRS. OBS: Essa inforamção na verdade fica embutida dentro do cabeçalho do arquivo Tif. O XML auxiliar é normalmente utilizado para algumas informações extras que não são suportadas pelo formato GEOTIFF. No caso dos dados do CBERS temos uma breve descrição do CRS, mas não completa. O que estaria faltando?
+*CRS.* OBS: Essa inforamção na verdade fica embutida dentro do cabeçalho do arquivo *tiff*. O *XML* auxiliar é normalmente utilizado para algumas informações extras que não são suportadas pelo formato *GEOTIFF.* No caso dos dados do *CBERS* temos uma breve descrição do *CRS*, mas não completa. O que estaria faltando?
 
 ```{r}
 metadados_xml_red_mux %>% xml2::xml_find_all("//image/datumName") %>% xml2::xml_text()
