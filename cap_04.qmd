@@ -112,7 +112,6 @@ blue <- terra::rast(arquivo_blue)
 raster_rgb <- terra::rast(list(red, green, blue))
 ```
 
-
 ### Verificando o *CRS* de *raster*
 
 Utilizando a função *terra::crs()* em um *SpatRaster*, obtemos as informações do *CRS* da fonte de dados.

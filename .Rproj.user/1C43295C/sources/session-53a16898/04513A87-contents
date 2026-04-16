@@ -1,7 +1,0 @@
----
-title: "Calculos com Atributos e Mapas Coropléticos"
-format: html
-execute:
-  freeze: true  # never re-render during project render
-number-sections: true 
----

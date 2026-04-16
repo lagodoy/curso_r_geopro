@@ -1,8 +1,0 @@
----
-title: "Junção de tabelas (Join) e espacial (spatial join)"
-format: html
-execute:
-  freeze: true  # never re-render during project render
-number-sections: true 
----
-

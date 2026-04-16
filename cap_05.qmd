@@ -9,10 +9,16 @@ number-sections: true
 ## Introdução
 
 ## Bibliotecas e dados utlizados nesta lição
+-   *sf*
+-   *dplyr*
+
+
 
 ## Preparação dos dados
 
-```{r}
+Confira os *CRS's* dos dois conjuntos de dados e os compatibilize adequadamente. Se estiver utilizando os dados sugerios da pesquisa OD de São Paulo, use o Sirgas 2000 UTM23S (EPSG:31983).
+
+```{r include=FALSE}
 pasta_dados <- '../lab_04/dados/'
 
 limites_municipios <- sf::st_read(paste0(pasta_dados, 'OD-2017/Mapas-OD2017/Shape-OD2017/Municipios_2017_region.shp'))
@@ -21,7 +27,9 @@ limites_municipios <- sf::st_transform(limites_municipios, 31983)
 zonas_od <- sf::st_read(paste0(pasta_dados, 'OD-2017/Mapas-OD2017/Shape-OD2017/Zonas_2017_region.shp'))
 sf::st_crs(zonas_od)$input
 zonas_od <- sf::st_transform(zonas_od, 31983)
+```
 
+```{r}
 plot(limites_municipios$geometry)
 head(limites_municipios)
 sort(limites_municipios$NomeMunici)

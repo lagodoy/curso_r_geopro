@@ -1,8 +1,0 @@
----
-title: "Parte 2 - Trabalhando com Dados Vetoriais"
-format: html
-execute:
-  freeze: true  # never re-render during project render
----
-
-Nos capitulos desta parte, são apresentados tutoriais utilizando dados vetoriais. São apresentadas diversas operações espaciais e formas de manipulação dos atributos associados com geometrias.
