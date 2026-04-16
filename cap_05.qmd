@@ -1,5 +1,5 @@
 ---
-title: "Topologia"
+title: "Erros de topologia"
 format: html
 execute:
   freeze: true  # never re-render during project render
@@ -12,11 +12,9 @@ number-sections: true
 -   *sf*
 -   *dplyr*
 
-
-
 ## Preparação dos dados
 
-Confira os *CRS's* dos dois conjuntos de dados e os compatibilize adequadamente. Se estiver utilizando os dados sugerios da pesquisa OD de São Paulo, use o Sirgas 2000 UTM23S (EPSG:31983).
+Confira os *CRS's* dos dois conjuntos de dados e os compatibilize adequadamente. Se estiver utilizando os dados sugerios da pesquisa OD de São Paulo, use o *Sirgas 2000 UTM23S (EPSG:31983)*. Em nosso exemplo, os dados da zonas OD estão na variável *zonas_od* e os dos limites de municípios em *limites_municipios*.
 
 ```{r include=FALSE}
 pasta_dados <- '../lab_04/dados/'
@@ -29,33 +27,46 @@ sf::st_crs(zonas_od)$input
 zonas_od <- sf::st_transform(zonas_od, 31983)
 ```
 
+Caso esteja utilizando os dados sugeridos, primeiro você deve selecionar apenas um município para fazer os testes. A função *sort()* aplicada em um vetor, ordena seus elementos. No caso, são *strings* com os nomes dos municípios. 
+
+A seguir, apenas o município de São Paulo é selecionado. A notação para a seleção é simples e será revista em outro capítulo. Basta usar o operador de igualdade de comparação no vetor com o nome escolhido, como no exemplo. O resultado será um vetor *booleano* com *TRUE* onde a *string* coincide. Esse resultado é então usado para fazer a seleção das linhas desejadas no *dataframe*, carregando as geometrias correspondentes nas linhas.
+
 ```{r}
-plot(limites_municipios$geometry)
-head(limites_municipios)
 sort(limites_municipios$NomeMunici)
 limites_municipios_selecionado <- limites_municipios[limites_municipios$NomeMunici=="São Paulo", ]
-plot(limites_municipios_selecionado$geometry)
 ```
 
-## Recortando Zonas de Pesquisa do Município de São Paulo
+## Erros de Topologia
 
-```{r error = TRUE}
-zonas_od_selecao <- sf::st_intersection(zonas_od, limites_municipios_selecionado)
-```
 
-## Correção
+### Checando erros de topologia no R
+
+Para checar os erros topológicos na base, a função *sf::st_is_valid()* é utilizada. Recebendo apenas o *dataframe* espacial como parâmetro, ela retorna um vetor *booleano* indicando se a linha corre
 
 ```{r}
 ind_geometrias_erro <- !sf::st_is_valid(zonas_od)
 zonas_od$erro <- ind_geometrias_erro
 plot(zonas_od[,c('erro', 'geometry')])
 zonas_od$motivo_erro <- sf::st_is_valid(zonas_od, reason=TRUE)
+```
+
+Se estiver usando os dados sugeridos, um erro de topologia deve surgir na tentativa de executar uma simples operação espacial entre vetores. Não se preocupe com entender a operação, caso  ainda não tenha tido contato prévio com os fundamentos de operações espaciais.
+
+```{r error = TRUE}
+zonas_od_selecao <- sf::st_intersection(zonas_od, limites_municipios_selecionado)
+```
+
+### Correção de erros de topologia.
+
+*sf::st_make_valid()*
+
+```{r}
 zonas_od_corrigidas <- sf::st_make_valid(zonas_od)
 ind_geometrias_erro <- !sf::st_is_valid(zonas_od_corrigidas)
 zonas_od_corrigidas[ind_geometrias_erro,]
 ```
 
-Um truque que funciona muitas vezes para polígonos é utilizar um buffer de raio 0.
+Um truque que costuma funcionar, para polígonos, é utilizar a operação de *buffer* com parâmetro 0 como raio.
 
 ```{r}
 zonas_od_corrigidas_buff <- sf::st_intersection(sf::st_buffer(zonas_od, 0), limites_municipios_selecionado)
@@ -63,95 +74,17 @@ ind_geometrias_erro <- !sf::st_is_valid(zonas_od_corrigidas_buff)
 zonas_od_corrigidas_buff[ind_geometrias_erro,]
 ```
 
-Faça o clip novamente
+Para verificar que a correção funcionou, faça o *clip* novamente e cheque a validade dos dados, como foi feito anteriormente.
 
-```{r}
+```{r eval=FALSE, include=FALSE}
 zonas_od_selecao <- sf::st_intersection(zonas_od_corrigidas, limites_municipios_selecionado)
 plot(zonas_od_selecao$geometry)
 ```
 
-Cheque a tabela de atributos e observe que o intersection carrega algumas zonas indevidas, fora do município de São Paulo. Você consegue explicar?
+Se estiver utilizando os dados sugeridos, verifique a tabela de atributos e observe que o intersection carrega algumas zonas indevidas, fora do município de São Paulo. Você consegue explicar?
 
-Com a tabela de atributos, cheque a quantidade de zonas em SP.
+Com a tabela de atributos, cheque a quantidade de zonas em SP. O total de zonas em São Paulo pode ser obtido com o código a seguir.
 
 ```{r}
 sum(zonas_od_corrigidas$NomeMunici=='São Paulo')
-```
-
-Podemos usar outro approach, checando os polígonos que estão totalmente dentro do município.
-
-```{r}
-lista_zonas_od_selecionadas <- sf::st_within(zonas_od_corrigidas, limites_municipios_selecionado)
-zonas_od_selecao <- zonas_od_corrigidas[lengths(lista_zonas_od_selecionadas) > 0, ]
-plot(zonas_od_selecao$geometry)
-nrow(zonas_od_selecao)
-```
-
-Observe que ainda há falhas no processo. Para ajustar, podemos rerduzir ligeiramente os polígonos das zonas od, para que fiquem exatamente dentro dos limites do município. A função st_buffer pode ser utilizada para isso.
-
-```{r}
-lista_zonas_od_selecionadas <- sf::st_within(sf::st_buffer(zonas_od_corrigidas, -50), limites_municipios_selecionado)
-zonas_od_selecao <- zonas_od_corrigidas[lengths(lista_zonas_od_selecionadas) > 0, ]
-plot(zonas_od_selecao$geometry)
-nrow(zonas_od_selecao)
-```
-
-Outra opção é utilizar a função st_intersects, com o buffer negativo nas zonas od.
-
-```{r}
-lista_zonas_od_selecionadas <- sf::st_intersects( sf::st_buffer(zonas_od_corrigidas, -50), limites_municipios_selecionado)
-zonas_od_selecao <- zonas_od_corrigidas[lengths(lista_zonas_od_selecionadas) > 0, ]
-plot(zonas_od_selecao$geometry)
-nrow(zonas_od_selecao)
-```
-
-## Inserção de dados externos e calculos com atributos
-
-```{r}
-nomes_colunas <- c('zona', 'nome', 'domicilios', 'familias', 'populacao', 
-                   'matriculas_ecolares', 'empregos',	'automoveis_particulares',
-                   'viagens_produzidas', 'viagens_atraidas', 'area_ha')
-
-dados_gerais_od <- readxl::read_xlsx(paste0(pasta_dados, 'OD-2017/Tabelas-OD2017/Tab01_OD2017.xlsx'), 
-                                     col_names=nomes_colunas, skip = 9, 
-                                     n_max=nrow(zonas_od_corrigidas))
-```
-
-Empregos por pessoa. Movimento pendular.
-
-```{r}
-dados_gerais_od$emp_pessoa <- ifelse(dados_gerais_od$populacao != 0, 
-                                     dados_gerais_od$empregos/dados_gerais_od$populacao,
-                                     0)
-```
-
-## Join
-
-```{r}
-names(zonas_od_selecao)
-names(dados_gerais_od)
-zonas_od_selecao <- merge(zonas_od_selecao, dados_gerais_od, by.x = 'NumeroZona', by.y='zona')
-```
-
-Outra opção é utilizar um pacote de manipulação de dados, como dplyr.
-
-```{r eval = FALSE}
-zonas_od_selecao <- dplyr::left_join(zonas_od_selecao, dados_gerais_od, by= c('NumeroZona' = 'zona'))
-```
-
-## Mapas coropléticos
-
-Com o mapview
-
-```{r}
-summary(zonas_od_selecao$emp_pessoa)
-zonas_od_selecao$classe_emp_pessoa <- ifelse(zonas_od_selecao$emp_pessoa > 1,
-                                             '[1,00, 40,00[',
-                                             '[0,00, 1,00[')
-mapview::mapview(zonas_od_selecao, zcol='classe_emp_pessoa', col.regions=c('red', 'blue'), label=c('emp_pessoa') )
-plot(zonas_od_selecao["classe_emp_pessoa"], axes=TRUE, pal = c('red', 'blue'))
-plot(zonas_od_selecao["emp_pessoa"], axes=TRUE, pal = c('red', 'blue'), breaks = c(0,1,40))
-zonas_od_selecao$classe_emp_pessoa <- cut(zonas_od_selecao$emp_pessoa, breaks=c(0,1,40), right = FALSE)
-
-plot(zonas_od_selecao["classe_emp_pessoa"], axes=TRUE, pal = c('red', 'blue'))
 ```

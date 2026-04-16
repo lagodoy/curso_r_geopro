@@ -47,72 +47,22 @@ selecao_subprefeitura <- dados_subprefeituras$sp_nome=='BUTANTA'
 limites_subprefeitura <- dados_subprefeituras[selecao_subprefeitura, ]$geometry
 ```
 
-## Operações espaciais
 
-### Clipping
 
-```{r}
-favelas_subprefeitura <- sf::st_intersection(dados_favelas, limites_subprefeitura)
-```
 
-```{r}
-mapa <- mapview::mapview(sf::st_boundary(limites_subprefeitura), 
-                         layer.name='Subprefeitura', map.types='OpenStreetMap')
-mapa
-```
+
+
+
+## Inserção de dados externos
 
 ```{r}
-mapa <- mapa + mapview::mapview(favelas_subprefeitura, layer.name='Favelas')
-mapa
-```
+nomes_colunas <- c('zona', 'nome', 'domicilios', 'familias', 'populacao', 
+                   'matriculas_ecolares', 'empregos',	'automoveis_particulares',
+                   'viagens_produzidas', 'viagens_atraidas', 'area_ha')
 
-Como exercício, faça o mesmo para a base de dados de saúde, selecionando somente os equipamentos públicos de alta complexidade.
+dados_gerais_od <- readxl::read_xlsx(paste0(pasta_dados, 'OD-2017/Tabelas-OD2017/Tab01_OD2017.xlsx'), 
+                                     col_names=nomes_colunas, skip = 9, 
+                                     n_max=nrow(zonas_od_corrigidas))
 
-```{r}
-saude_alta_complexidade <- dados_saude[(dados_saude$SEGMENTO %in% c('SAUGM', 'SAUGE'))
-                                       & (dados_saude$TIPO =='HOSP' | dados_saude$TIPO == 'PATEN'), ]
-```
 
-```{r}
-saude_subprefeitura <- sf::st_intersection(saude_alta_complexidade, limites_subprefeitura)
-```
 
-```{r}
-mapa <- mapa + mapview::mapview(saude_subprefeitura, layer.name='Equipamentos de Saude Publicos de Alta Complexidade')
-mapa
-```
-
-### Buffering
-
-```{r}
-saude_subprefeitura_buffer<- sf::st_buffer(saude_subprefeitura, 2000)
-
-mapa <-  mapa +  mapview::mapview(sf::st_boundary(saude_subprefeitura_buffer), 
-                                  layer.name='Alcance do equipamento - 2km')
-mapa
-```
-
-### Intersecção
-
-```{r}
-favelas_cobertura <- sf::st_intersection(favelas_subprefeitura, saude_subprefeitura_buffer)
-```
-
-```{r}
-mapa <-  mapa + mapview::mapview(favelas_cobertura, label='Dentro',
-                                 layer.name='Favelas dentro em área de alcance de equipamento')
-mapa
-```
-
-### Difference
-
-```{r}
-favelas_fora_raio <- sf::st_difference(favelas_subprefeitura, 
-                                       sf::st_union(saude_subprefeitura_buffer))
-```
-
-```{r}
-mapa <-  mapa + mapview::mapview(favelas_fora_raio, color='red', col.regions='pink', 
-                                 label='Fora', layer.name='Favelas fora de área de alcance de equipamento')
-mapa
-```

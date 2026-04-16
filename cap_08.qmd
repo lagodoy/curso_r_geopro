@@ -5,3 +5,18 @@ execute:
   freeze: true  # never re-render during project render
 number-sections: true 
 ---
+
+
+## Join
+
+```{r}
+names(zonas_od_selecao)
+names(dados_gerais_od)
+zonas_od_selecao <- merge(zonas_od_selecao, dados_gerais_od, by.x = 'NumeroZona', by.y='zona')
+```
+
+Outra opção é utilizar um pacote de manipulação de dados, como dplyr.
+
+```{r eval = FALSE}
+zonas_od_selecao <- dplyr::left_join(zonas_od_selecao, dados_gerais_od, by= c('NumeroZona' = 'zona'))
+```

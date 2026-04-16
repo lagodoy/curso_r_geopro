@@ -32,6 +32,10 @@ Escolha uma coluna para colorir o mapa. Posteriormente estudaremos melhor essa o
 ### Visualização de arquivo vetorial com com *R* básico
 
 ```{r}
+plot(dados_vetor$geometry)
+```
+
+```{r}
 plot(dados_vetor[, c('ct_area')])
 ```
 
