@@ -1,104 +1,87 @@
 ---
-title: "Operações Espaciais Básicas"
+title: "Erros de topologia"
 format: html
 execute:
   freeze: true  # never re-render during project render
-number-sections: true  
+number-sections: true 
 ---
 
-## Operações espaciais
+## Introdução
 
-### Clipping
+## Bibliotecas e dados utlizados nesta lição
 
-```{r}
-favelas_subprefeitura <- sf::st_intersection(dados_favelas, limites_subprefeitura)
+-   *sf*
+-   *dplyr*
+
+## Preparação dos dados
+
+Confira os *CRS's* dos dois conjuntos de dados e os compatibilize adequadamente. Se estiver utilizando os dados sugerios da pesquisa OD de São Paulo, use o *Sirgas 2000 UTM23S (EPSG:31983)*. Em nosso exemplo, os dados da zonas OD estão na variável *zonas_od* e os dos limites de municípios em *limites_municipios*.
+
+```{r include=FALSE}
+pasta_dados <- '../lab_04/dados/'
+
+limites_municipios <- sf::st_read(paste0(pasta_dados, 'OD-2017/Mapas-OD2017/Shape-OD2017/Municipios_2017_region.shp'))
+sf::st_crs(limites_municipios)$input
+limites_municipios <- sf::st_transform(limites_municipios, 31983)
+zonas_od <- sf::st_read(paste0(pasta_dados, 'OD-2017/Mapas-OD2017/Shape-OD2017/Zonas_2017_region.shp'))
+sf::st_crs(zonas_od)$input
+zonas_od <- sf::st_transform(zonas_od, 31983)
 ```
 
-```{r}
-mapa <- mapview::mapview(sf::st_boundary(limites_subprefeitura), 
-                         layer.name='Subprefeitura', map.types='OpenStreetMap')
+Caso esteja utilizando os dados sugeridos, primeiro você deve selecionar apenas um município para fazer os testes. 
+```{r include=FALSE}
+sort(limites_municipios$NomeMunici)
+limites_municipios_selecionado <- limites_municipios[limites_municipios$NomeMunici=="São Paulo", ]
 ```
 
+## Erros de Topologia
+
+### Checando erros de topologia no R
+
+Para checar os erros topológicos na base, a função *sf::st_is_valid()* é utilizada. Recebendo apenas o *dataframe* espacial como parâmetro, ela retorna um vetor *booleano* indicando se a linha corre
+
 ```{r}
-mapa <- mapa + mapview::mapview(favelas_subprefeitura, layer.name='Favelas')
+ind_geometrias_erro <- !sf::st_is_valid(zonas_od)
+zonas_od$erro <- ind_geometrias_erro
+plot(zonas_od[,c('erro', 'geometry')])
+zonas_od$motivo_erro <- sf::st_is_valid(zonas_od, reason=TRUE)
 ```
 
-Como exercício, faça o mesmo para a base de dados de saúde, selecionando somente os equipamentos públicos de alta complexidade.
+Se estiver usando os dados sugeridos, um erro de topologia deve surgir na tentativa de executar uma simples operação espacial entre vetores. Não se preocupe com entender a operação, caso ainda não tenha tido contato prévio com os fundamentos de operações espaciais.
 
-```{r}
-saude_alta_complexidade <- dados_saude[(dados_saude$SEGMENTO %in% c('SAUGM', 'SAUGE'))
-                                       & (dados_saude$TIPO =='HOSP' | dados_saude$TIPO == 'PATEN'), ]
+```{r error = TRUE}
+zonas_od_selecao <- sf::st_intersection(zonas_od, limites_municipios_selecionado)
 ```
 
+### Correção de erros de topologia.
+
+*sf::st_make_valid()*
+
 ```{r}
-saude_subprefeitura <- sf::st_intersection(saude_alta_complexidade, limites_subprefeitura)
+zonas_od_corrigidas <- sf::st_make_valid(zonas_od)
+ind_geometrias_erro <- !sf::st_is_valid(zonas_od_corrigidas)
+zonas_od_corrigidas[ind_geometrias_erro,]
 ```
 
+Um truque que costuma funcionar, para polígonos, é utilizar a operação de *buffer* com parâmetro 0 como raio.
+
 ```{r}
-mapa <- mapa + mapview::mapview(saude_subprefeitura, layer.name='Equipamentos de Saude Publicos de Alta Complexidade')
-mapa
+zonas_od_corrigidas_buff <- sf::st_intersection(sf::st_buffer(zonas_od, 0), limites_municipios_selecionado)
+ind_geometrias_erro <- !sf::st_is_valid(zonas_od_corrigidas_buff)
+zonas_od_corrigidas_buff[ind_geometrias_erro,]
 ```
 
-### Buffering
+Para verificar que a correção funcionou, faça o *clip* novamente e cheque a validade dos dados, como foi feito anteriormente.
 
-```{r}
-saude_subprefeitura_buffer<- sf::st_buffer(saude_subprefeitura, 2000)
-
-mapa <-  mapa +  mapview::mapview(sf::st_boundary(saude_subprefeitura_buffer), 
-                                  layer.name='Alcance do equipamento - 2km')
-mapa
-```
-
-### Intersecção
-
-```{r}
-favelas_cobertura <- sf::st_intersection(favelas_subprefeitura, saude_subprefeitura_buffer)
-```
-
-```{r}
-mapa <-  mapa + mapview::mapview(favelas_cobertura, label='Dentro',
-                                 layer.name='Favelas dentro em área de alcance de equipamento')
-mapa
-```
-
-### Difference
-
-```{r}
-favelas_fora_raio <- sf::st_difference(favelas_subprefeitura, 
-                                       sf::st_union(saude_subprefeitura_buffer))
-```
-
-```{r}
-mapa <-  mapa + mapview::mapview(favelas_fora_raio, color='red', col.regions='pink', 
-                                 label='Fora', layer.name='Favelas fora de área de alcance de equipamento')
-mapa
-```
-
-Podemos usar outro approach, checando os polígonos que estão totalmente dentro do município.
-
-```{r}
-lista_zonas_od_selecionadas <- sf::st_within(zonas_od_corrigidas, limites_municipios_selecionado)
-zonas_od_selecao <- zonas_od_corrigidas[lengths(lista_zonas_od_selecionadas) > 0, ]
+```{r eval=FALSE, include=FALSE}
+zonas_od_selecao <- sf::st_intersection(zonas_od_corrigidas, limites_municipios_selecionado)
 plot(zonas_od_selecao$geometry)
-nrow(zonas_od_selecao)
 ```
 
-Observe que ainda há falhas no processo. Para ajustar, podemos rerduzir ligeiramente os polígonos das zonas od, para que fiquem exatamente dentro dos limites do município. A função st_buffer pode ser utilizada para isso.
+Se estiver utilizando os dados sugeridos, verifique a tabela de atributos e observe que o intersection carrega algumas zonas indevidas, fora do município de São Paulo. Você consegue explicar?
+
+Com a tabela de atributos, cheque a quantidade de zonas em SP. O total de zonas em São Paulo pode ser obtido com o código a seguir.
 
 ```{r}
-lista_zonas_od_selecionadas <- sf::st_within(sf::st_buffer(zonas_od_corrigidas, -50), limites_municipios_selecionado)
-zonas_od_selecao <- zonas_od_corrigidas[lengths(lista_zonas_od_selecionadas) > 0, ]
-plot(zonas_od_selecao$geometry)
-nrow(zonas_od_selecao)
+sum(zonas_od_corrigidas$NomeMunici=='São Paulo')
 ```
-
-Outra opção é utilizar a função st_intersects, com o buffer negativo nas zonas od.
-
-```{r}
-lista_zonas_od_selecionadas <- sf::st_intersects( sf::st_buffer(zonas_od_corrigidas, -50), limites_municipios_selecionado)
-zonas_od_selecao <- zonas_od_corrigidas[lengths(lista_zonas_od_selecionadas) > 0, ]
-plot(zonas_od_selecao$geometry)
-nrow(zonas_od_selecao)
-```
-
-## Dissolve

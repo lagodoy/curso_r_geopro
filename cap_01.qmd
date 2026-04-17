@@ -13,7 +13,7 @@ number-sections: true
 -   *sf* para trabalhar com dados vetoriais
 -   *terra* para trabalhar com dados do tipo *raster*
 
-Como exemplo, fica a sugestão de encontrar uma base de dados no *GeoSampa* que esteja no formato *shapefile* ou *gpkg*&ensp;(base com dados vetoriais) e um arquivo do tipo *raster* no formato *geotiff*&ensp; no *topodata* do *INPE*.
+Como exemplo, fica a sugestão de encontrar uma base de dados no *GeoSampa* que esteja no formato *shapefile* ou *gpkg* (base com dados vetoriais) e um arquivo do tipo *raster* no formato *geotiff*  no *topodata* do *INPE*.
 
 ## Vetor
 
@@ -21,13 +21,15 @@ Como exemplo, fica a sugestão de encontrar uma base de dados no *GeoSampa* que 
 
 Para carregar dados vetoriais, pode ser utilizada a função *read_sf()* do pacote *sf*. Essa função recebe o caminho para um arquivo com dados vetoriais como parâmetro. No exemplo a seguir, o resultado é colocado na variável *dados_vetor*.
 
+Normalmente a informação de encoding fica no arquivo com extensão *.cpg* do conjunto do shapefile lido, caso não exista, a atribuição será um *charset* padrão. Abra os *dataframes* para checar se as *strings* estão com caracteres estranhos. Por exemplo, no caso dos dados do CEM, alguns não possuem o arquivo *.cpg* e pode haver esse problema. Caso ele ocorra, use o parâmetro `options = "ENCODING=latin1"`\`, confome última linha do bloco de códigos abaixo.
+
 ```{r include=FALSE}
 pasta_dados <- '../lab_01/dados/'
 caminho_vetor_entrada <- paste0(pasta_dados, 'SAD69-96_SHP_cortico/SAD69-96_SHP_cortico.shp')
 ```
 
 ```{r}
-dados_vetor <- sf::read_sf(caminho_vetor_entrada)
+dados_vetor <- sf::read_sf(caminho_vetor_entrada, options = "ENCODING=latin1")
 ```
 
 No R, a função *class()* é utilizada para checar o tipo de dado armazenado em uma variável.
@@ -56,6 +58,7 @@ sf::write_sf(dados_vetor, caminho_vetor_saida)
 ### Carregando um arquivo *raster* no R
 
 #### Arquivo com apenas uma banda
+
 ```{r include=FALSE}
 pasta_dados <- '../lab_03/dados/'
 caminho_raster_entrada <- paste0(pasta_dados, 'rasters_SRTMGL1/output_SRTMGL1.tif')
@@ -74,8 +77,8 @@ class(raster)
 raster[1:6]
 ```
 
-
 #### Dados multibanda
+
 Os dados das bandas podem estar em apenas um arquivo ou em vários. O exemplo a seguir mostra como carregar três arquivos de uma banda e empilhá-los para criar apenas um objeto *SpatRaster* multibandas. Caso esteja usando os dados sugeridos neste capítulo, lembre-se de ajustar corretamente os caminhos dos arquivos nas variáveis para que a leitura seja feita de acordo com as bandas do visível.
 
 ```{r include=FALSE}

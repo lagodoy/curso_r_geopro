@@ -1,68 +1,131 @@
 ---
-title: "Seleção de Dados"
+title: "Operações Espaciais Básicas"
 format: html
 execute:
   freeze: true  # never re-render during project render
-number-sections: true 
+number-sections: true  
 ---
 
 ## Introdução
 
 ## Bibliotecas e dados utlizados nesta lição
 
+-   *sf*
+-   *dplyr*
+
+Dados: Favelas, subprefeituras e de saúde, provenientes do CEM.
+
 ## Preparação dos dados
 
-Normalmente a informação de encoding fica no arquivo com extensão .cpg do conjunto do shapefile lido, caso não exista, a atribuição será um charset padrão. Abra os dataframes para checar se as strings estão com caracteres estranhos. No caso dos dados do CEM testados (até o momento) não há o arquivo cpg e pode haver esse problema. Caso ele ocorra, use o parâmetro options = "ENCODING=latin1", confome última linha do bloco de códigos abaixo.
-
-Leitura dos dados
-
-```{r}
+```{r include=FALSE}
 pasta_dados <- '../lab_02/dados/'
 
 dados_favelas <- sf::read_sf(paste0(pasta_dados, 'SIRGAS_SHP_favela/SIRGAS_SHP_favela.shp'))
 dados_subprefeituras <- sf::read_sf(paste0(pasta_dados, 'SIRGAS_SHP_subprefeitura/SIRGAS_SHP_subprefeitura.shp'))
 #dados_saude <- sf::read_sf(paste0(pasta_dados, 'SAU2022_RMSP_CEM/SAU2022_RMSP_CEM.shp'))#, options = "ENCODING=latin1"))
+
 dados_saude <- sf::read_sf(paste0(pasta_dados, 'SAU2022_RMSP_CEM/SAU2022_RMSP_CEM.shp'), options = "ENCODING=latin1")
-```
-
-Checagem dos CRS's e atribuiççao ou transformaççao quando necessaŕio.
-
-```{r}
-sf::st_crs(dados_favelas)$input
-sf::st_crs(dados_subprefeituras)$input
-sf::st_crs(dados_saude)$input
-
 sf::st_crs(dados_favelas) <- 31983
 sf::st_crs(dados_subprefeituras) <- 31983
 
 dados_saude <-  sf::st_transform(dados_saude, crs = 31983)
 ```
-
-## Seleção por atributo
-
-```{r}
+Faça a seleção da geometria da subprefeitura do Butantã.
+```{r include=FALSE}
 dados_favelas
 dados_subprefeituras$sp_nome
 selecao_subprefeitura <- dados_subprefeituras$sp_nome=='BUTANTA'
 limites_subprefeitura <- dados_subprefeituras[selecao_subprefeitura, ]$geometry
 ```
 
+## Operações de *overlay* (sobreposição)
 
-
-
-
-
-
-## Inserção de dados externos
+### *Clip*
 
 ```{r}
-nomes_colunas <- c('zona', 'nome', 'domicilios', 'familias', 'populacao', 
-                   'matriculas_ecolares', 'empregos',	'automoveis_particulares',
-                   'viagens_produzidas', 'viagens_atraidas', 'area_ha')
+favelas_subprefeitura <- sf::st_intersection(dados_favelas, limites_subprefeitura)
+```
 
-dados_gerais_od <- readxl::read_xlsx(paste0(pasta_dados, 'OD-2017/Tabelas-OD2017/Tab01_OD2017.xlsx'), 
-                                     col_names=nomes_colunas, skip = 9, 
-                                     n_max=nrow(zonas_od_corrigidas))
+```{r}
+mapa <- mapview::mapview(sf::st_boundary(limites_subprefeitura), 
+                         layer.name='Subprefeitura')
+mapa <- mapa + mapview::mapview(favelas_subprefeitura, layer.name='Favelas')
+mapa
+```
 
 
+### *Intersection*
 
+
+```{r}
+saude_subprefeitura <- sf::st_intersection(saude_alta_complexidade, limites_subprefeitura)
+```
+
+```{r eval=FALSE}
+mapa <- mapa + mapview::mapview(saude_subprefeitura, layer.name='Equipamentos de Saude Publicos de Alta Complexidade')
+mapa
+```
+
+### Buffering
+
+```{r}
+saude_subprefeitura_buffer<- sf::st_buffer(saude_subprefeitura, 2000)
+
+mapa <-  mapa +  mapview::mapview(sf::st_boundary(saude_subprefeitura_buffer), 
+                                  layer.name='Alcance do equipamento - 2km')
+mapa
+```
+
+### Intersecção
+
+```{r}
+favelas_cobertura <- sf::st_intersection(favelas_subprefeitura, saude_subprefeitura_buffer)
+```
+
+```{r}
+mapa <-  mapa + mapview::mapview(favelas_cobertura, label='Dentro',
+                                 layer.name='Favelas dentro em área de alcance de equipamento')
+mapa
+```
+
+### Difference
+
+```{r}
+favelas_fora_raio <- sf::st_difference(favelas_subprefeitura, 
+                                       sf::st_union(saude_subprefeitura_buffer))
+```
+
+```{r}
+mapa <-  mapa + mapview::mapview(favelas_fora_raio, color='red', col.regions='pink', 
+                                 label='Fora', layer.name='Favelas fora de área de alcance de equipamento')
+mapa
+```
+
+Podemos usar outro approach, checando os polígonos que estão totalmente dentro do município.
+
+```{r}
+lista_zonas_od_selecionadas <- sf::st_within(zonas_od_corrigidas, limites_municipios_selecionado)
+zonas_od_selecao <- zonas_od_corrigidas[lengths(lista_zonas_od_selecionadas) > 0, ]
+plot(zonas_od_selecao$geometry)
+nrow(zonas_od_selecao)
+```
+
+Observe que ainda há falhas no processo. Para ajustar, podemos rerduzir ligeiramente os polígonos das zonas od, para que fiquem exatamente dentro dos limites do município. A função st_buffer pode ser utilizada para isso.
+
+```{r}
+lista_zonas_od_selecionadas <- sf::st_within(sf::st_buffer(zonas_od_corrigidas, -50), limites_municipios_selecionado)
+zonas_od_selecao <- zonas_od_corrigidas[lengths(lista_zonas_od_selecionadas) > 0, ]
+plot(zonas_od_selecao$geometry)
+nrow(zonas_od_selecao)
+```
+
+Outra opção é utilizar a função st_intersects, com o buffer negativo nas zonas od.
+
+```{r}
+lista_zonas_od_selecionadas <- sf::st_intersects( sf::st_buffer(zonas_od_corrigidas, -50), limites_municipios_selecionado)
+zonas_od_selecao <- zonas_od_corrigidas[lengths(lista_zonas_od_selecionadas) > 0, ]
+plot(zonas_od_selecao$geometry)
+nrow(zonas_od_selecao)
+```
+
+## Dissolve

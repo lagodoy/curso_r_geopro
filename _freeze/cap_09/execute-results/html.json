@@ -1,0 +1,15 @@
+{
+  "hash": "0d2bcc3a0312d1aab259f540becaf94e",
+  "result": {
+    "engine": "knitr",
+    "markdown": "---\ntitle: \"Junção de Tabelas (Join) e Espacial (Spatial Join)\"\nformat: html\nexecute:\n  freeze: true  # never re-render during project render\nnumber-sections: true \n---\n\n## Inserção de dados externos\n\n\n::: {.cell}\n\n```{.r .cell-code}\nnomes_colunas <- c('zona', 'nome', 'domicilios', 'familias', 'populacao', 'matriculas_ecolares', 'empregos', 'automoveis_particulares', 'viagens_produzidas', 'viagens_atraidas', 'area_ha')\n\ndados_gerais_od <- readxl::read_xlsx(paste0(pasta_dados, 'OD-2017/Tabelas-OD2017/Tab01_OD2017.xlsx'), col_names=nomes_colunas, skip = 9, n_max=nrow(zonas_od_corrigidas))\n```\n:::\n\n\n## Join\n\n\n::: {.cell}\n\n```{.r .cell-code}\nnames(zonas_od_selecao)\nnames(dados_gerais_od)\nzonas_od_selecao <- merge(zonas_od_selecao, dados_gerais_od, by.x = 'NumeroZona', by.y='zona')\n```\n:::\n\n\nOutra opção é utilizar um pacote de manipulação de dados, como dplyr.\n\n\n::: {.cell}\n\n```{.r .cell-code}\nzonas_od_selecao <- dplyr::left_join(zonas_od_selecao, dados_gerais_od, by= c('NumeroZona' = 'zona'))\n```\n:::\n\n",
+    "supporting": [],
+    "filters": [
+      "rmarkdown/pagebreak.lua"
+    ],
+    "includes": {},
+    "engineDependencies": {},
+    "preserve": {},
+    "postProcess": true
+  }
+}

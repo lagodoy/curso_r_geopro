@@ -1,22 +1,38 @@
 ---
-title: "Junção de Tabelas (Join) e Espacial (Spatial Join)"
+title: "Seleção de Dados"
 format: html
 execute:
   freeze: true  # never re-render during project render
 number-sections: true 
 ---
 
+## Introdução
 
-## Join
+## Bibliotecas e dados utlizados nesta lição
 
-```{r}
-names(zonas_od_selecao)
-names(dados_gerais_od)
-zonas_od_selecao <- merge(zonas_od_selecao, dados_gerais_od, by.x = 'NumeroZona', by.y='zona')
+## Preparação dos dados
+
+Leitura dos dados
+
+```{r include=FALSE}
+pasta_dados <- '../lab_02/dados/'
+
+dados_favelas <- sf::read_sf(paste0(pasta_dados, 'SIRGAS_SHP_favela/SIRGAS_SHP_favela.shp'))
+dados_subprefeituras <- sf::read_sf(paste0(pasta_dados, 'SIRGAS_SHP_subprefeitura/SIRGAS_SHP_subprefeitura.shp'))
+#dados_saude <- sf::read_sf(paste0(pasta_dados, 'SAU2022_RMSP_CEM/SAU2022_RMSP_CEM.shp'))#, options = "ENCODING=latin1"))
+dados_saude <- sf::read_sf(paste0(pasta_dados, 'SAU2022_RMSP_CEM/SAU2022_RMSP_CEM.shp'), options = "ENCODING=latin1")
 ```
 
-Outra opção é utilizar um pacote de manipulação de dados, como dplyr.
+Checagem dos CRS's e atribuiççao ou transformaççao quando necessaŕio.
 
-```{r eval = FALSE}
-zonas_od_selecao <- dplyr::left_join(zonas_od_selecao, dados_gerais_od, by= c('NumeroZona' = 'zona'))
+```{r include=FALSE}
+sf::st_crs(dados_favelas)$input
+sf::st_crs(dados_subprefeituras)$input
+sf::st_crs(dados_saude)$input
+
+sf::st_crs(dados_favelas) <- 31983
+sf::st_crs(dados_subprefeituras) <- 31983
+
+dados_saude <-  sf::st_transform(dados_saude, crs = 31983)
 ```
+

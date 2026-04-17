@@ -1,36 +1,29 @@
 ---
-title: "Calculos com Atributos e Mapas Coropléticos"
+title: "Junção de Tabelas (Join) e Espacial (Spatial Join)"
 format: html
 execute:
   freeze: true  # never re-render during project render
 number-sections: true 
 ---
 
+## Inserção de dados externos
+
+```{r eval = FALSE} 
+nomes_colunas <- c('zona', 'nome', 'domicilios', 'familias', 'populacao', 'matriculas_ecolares', 'empregos', 'automoveis_particulares', 'viagens_produzidas', 'viagens_atraidas', 'area_ha')
+
+dados_gerais_od <- readxl::read_xlsx(paste0(pasta_dados, 'OD-2017/Tabelas-OD2017/Tab01_OD2017.xlsx'), col_names=nomes_colunas, skip = 9, n_max=nrow(zonas_od_corrigidas))
 ```
 
-## Inserção de dados externos e calculos com atributos
+## Join
 
-Empregos por pessoa. Movimento pendular.
-
-```{r}
-dados_gerais_od$emp_pessoa <- ifelse(dados_gerais_od$populacao != 0, 
-                                     dados_gerais_od$empregos/dados_gerais_od$populacao,
-                                     0)
+```{r eval = FALSE}
+names(zonas_od_selecao)
+names(dados_gerais_od)
+zonas_od_selecao <- merge(zonas_od_selecao, dados_gerais_od, by.x = 'NumeroZona', by.y='zona')
 ```
 
-## Mapas coropléticos
+Outra opção é utilizar um pacote de manipulação de dados, como dplyr.
 
-Com o mapview
-
-```{r}
-summary(zonas_od_selecao$emp_pessoa)
-zonas_od_selecao$classe_emp_pessoa <- ifelse(zonas_od_selecao$emp_pessoa > 1,
-                                             '[1,00, 40,00[',
-                                             '[0,00, 1,00[')
-mapview::mapview(zonas_od_selecao, zcol='classe_emp_pessoa', col.regions=c('red', 'blue'), label=c('emp_pessoa') )
-plot(zonas_od_selecao["classe_emp_pessoa"], axes=TRUE, pal = c('red', 'blue'))
-plot(zonas_od_selecao["emp_pessoa"], axes=TRUE, pal = c('red', 'blue'), breaks = c(0,1,40))
-zonas_od_selecao$classe_emp_pessoa <- cut(zonas_od_selecao$emp_pessoa, breaks=c(0,1,40), right = FALSE)
-
-plot(zonas_od_selecao["classe_emp_pessoa"], axes=TRUE, pal = c('red', 'blue'))
+```{r eval = FALSE}
+zonas_od_selecao <- dplyr::left_join(zonas_od_selecao, dados_gerais_od, by= c('NumeroZona' = 'zona'))
 ```

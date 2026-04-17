@@ -1,5 +1,5 @@
 ---
-title: "MDT e Estatisticas Zonais"
+title: "Tutorial: Isócronas - Áreas de Serviço"
 format: html
 execute:
   freeze: true  # never re-render during project render
@@ -10,246 +10,320 @@ number-sections: true
 
 ## Bibliotecas e dados utlizados nesta lição
 
-## Preparação dos dados
-
-Para os shapefiles, siga as dicas dos roteiros anteriores.
-
-Leitura dos dados Subprefeitura
+## Software e dados necessários para a prática de laboratório
 
 ```{r}
-pasta_dados <- '../lab_03/dados/'
+pasta_dados <- '../lab_05/dados/'
 
-dados_subprefeituras <- sf::read_sf(paste0(pasta_dados, 'SIRGAS_SHP_subprefeitura/SIRGAS_SHP_subprefeitura.shp'))
-sf::st_crs(dados_subprefeituras)$input
-sf::st_crs(dados_subprefeituras) <- 31983
+limites_subprefeituras <- sf::st_read(paste0(pasta_dados, '/geoportal_subprefeitura_v2.gpkg'), options = "ENCODING=latin1")
+sf::st_crs(limites_subprefeituras)$input
+subprefeitura_selecionada <- limites_subprefeituras[limites_subprefeituras$nm_subprefeitura=='BUTANTA',]
 
+estacoes_metro <- sf::st_read(paste0(pasta_dados, '/geoportal_estacao_metro_v2.geojson'), options = "ENCODING=latin1")
+sf::st_crs(estacoes_metro)$input
 
-selecao_subprefeitura <- dados_subprefeituras$sp_nome=='FREGUESIA-BRASILANDIA'
-limites_subprefeitura <- dados_subprefeituras[selecao_subprefeitura, ]$geometry
-```
+id_estacoes_subprefeitura <- sf::st_within(estacoes_metro, subprefeitura_selecionada)
+id_estacoes_subprefeitura
+estacoes_metro <- estacoes_metro[lengths(id_estacoes_subprefeitura) > 0, ]
+head(estacoes_metro)
 
-MDT - SRTM: Retângulo para a busca a partir de um bounding box de um buffer da subprefeitura.
+logradouros <- sf::st_read(paste0(pasta_dados, '/LOG2020_CEM_RMSP/LOG2020_CEM_RMSP.shp'),options = "ENCODING=latin1")
+sf::st_crs(logradouros)$input
+logradouros <- sf::st_transform(logradouros, 31983)
+sf::st_crs(logradouros)$input
 
-```{r}
-sf::st_bbox(sf::st_transform(sf::st_buffer(limites_subprefeitura, 300), 4326))
-```
+logradouros_subprefeitura <- sf::st_intersection(logradouros, subprefeitura_selecionada)
+head(logradouros_subprefeitura)
 
-Fonte: https://portal.opentopography.org/raster?opentopoID=OTSRTM.042013.4326.1
-
-Aqui, são quatro arquivos que precisam ser juntados em um único layer. Dois para o distrito de Brasilândia e dois para o distrito da Freguesia do Ó. Colocar exemplo com arquivos individuais antes da leitura em lote.
-
-```{r}
-curvas_nivel_linha <- sf::read_sf(file.path(pasta_dados,
-                                'SIRGAS_SHP_curvaintermediaria_11_BRASILANDIA',
-                                'SIRGAS_SHP_curvaintermediaria_linha_11_BRASILANDIA',
-                                'SIRGAS_SHP_curvaintermediaria_linha_11_BRASILANDIA.shp'))
-curvas_nivel_seg <- sf::read_sf(file.path(pasta_dados,
-                                          'SIRGAS_SHP_curvaintermediaria_11_BRASILANDIA',
-                                          'SIRGAS_SHP_curvaintermediaria_segm_11_BRASILANDIA',
-                                          'SIRGAS_SHP_curvaintermediaria_segm_11_BRASILANDIA.shp'))
-```
-
-Aqui devemos verificar as colunas e identificar aquelas que serão mantidas posteriormente.
-
-```{r}
-names(curvas_nivel_linha)
-names(curvas_nivel_seg)
-sf::st_crs(curvas_nivel_linha)$input
-rm(curvas_nivel_linha, curvas_nivel_seg)
+rm(logradouros)
 gc()
+
+mapview::mapview(logradouros_subprefeitura$geometry, map.types='OpenStreetMap.Mapnik') + 
+  mapview::mapview(estacoes_metro, 
+                   col.regions='yellow',
+                   zcol='nm_linha_metro_trem', 
+                   popup='nm_estacao_metro_trem')
 ```
 
-Implementando a leitura em lote dos arquivos.
+## Áreas de serviço
+
+Apenas sf
 
 ```{r}
-prefixo_arquivos_curvas <- 'SIRGAS_SHP_curvaintermediaria.*shp$'
-caminho_arquivos_curvas <- list.files(pasta_dados, pattern = prefixo_arquivos_curvas, recursive = TRUE, full.names = TRUE)
-caminho_arquivos_curvas
-```
+library(magrittr)
 
-Função para ler arquivo com dados das curvas de nível.
-
-```{r}
-le_arquivo_curvas <- function (arquivo) {
-                                          curvas_nivel <- sf::read_sf(arquivo)
-                                          # Seleciona as colunas de interesse.
-                                          curvas_nivel <- curvas_nivel[, c('ISOVALOR', 'geometry')]
-                                          sf::st_crs(curvas_nivel) <- 31983
-                                          return(curvas_nivel)
-}
-```
-
-Cria uma lista com os dataframes com dados de cada arquivo.
-
-```{r}
-curvas_nivel <- lapply(caminho_arquivos_curvas, le_arquivo_curvas)
-length(curvas_nivel)
-# Junta os dados na lista em um único dataframe
-curvas_nivel <- do.call(rbind, curvas_nivel)
-
-# Cuidado com o plot pois pode ser pesado para renderizar.
-plot(curvas_nivel[sample(nrow(curvas_nivel), nrow(curvas_nivel)*0.1 ), ])
-# Com o mapview
-curvas_nivel_agrupada <-dplyr::group_by(curvas_nivel, ISOVALOR)
-curvas_nivel_agrupada <- dplyr::summarise(curvas_nivel_agrupada, geometry=sf::st_combine(geometry) )
-#mapa <- mapview::mapview(curvas_nivel_agrupada)
-#mapa
-```
-
-Arquivo coom os dados de elevação (MDT) cobrindo a região.
-
-```{r}
-mdt <- terra::rast(paste0(pasta_dados, 'rasters_SRTMGL1/output_SRTMGL1.tif'))
-mdt
-mdt[22,22]
-terra::crs(mdt, describe=TRUE)
-mdt <- terra::project(mdt, "epsg:31983")
-terra::plot(mdt)
-```
-
-Seleciona os dados de MDT apenas na região de interesse. Note o buffer na área para que a seleção ultrapasse os limites, necessário para os cálculos posteriores de slope. Quando vetor, pega o bbox
-
-```{r}
-mdt <- terra::crop(mdt, sf::st_buffer(limites_subprefeitura, 300), touches=FALSE)
-terra::plot(mdt)
-# Mascara tudo de uma vez.
-mdt <- terra::mask(mdt, mask=terra::vect(sf::st_buffer(limites_subprefeitura, 300)), touches = FALSE)
-terra::plot(mdt)
-```
-
-Favelas na região
-
-```{r}
-dados_favelas <- sf::read_sf(paste0(pasta_dados, 'SIRGAS_SHP_favela/SIRGAS_SHP_favela.shp'))
-
-sf::st_crs(dados_favelas)$input
-sf::st_crs(dados_favelas) <- 31983
-favelas_subprefeitura <- sf::st_intersection(dados_favelas, limites_subprefeitura)
-```
-
-## Gerar curvas de nível a partir do MDT
-
-Primeiro vamos observar como seriam curvas de nível a partir dos dads de MDT fornecidos. Para visualização rápida use o contour do terra.
-
-```{r}
-plot.new()
-terra::contour(mdt, add=TRUE, nlevels = 100)
-#mapview::mapview(terra::as.contour(mdt, nlevels = 100), map=mapa@map)
-
-rm(mapa)
-gc()
-```
-
-## Gerar Modelo Digital do Terreno a partir de curvas de nível
-
-Rede TIN.
-
-```{r eval=FALSE}
-vertices_curvas <- apply(curvas_nivel, MARGIN = 1, FUN= function (linha) {
-                                            vertices <- data.frame(sf::st_coordinates(linha$geometry)[,1:2])
-                                            isovalor <- data.frame(z=rep(linha$ISOVALOR, nrow(vertices)))
-                                            return(cbind(vertices, isovalor))
-                                            })
-vertices_curvas <- data.table::rbindlist(vertices_curvas)
-vertices_curvas <- sf::st_multipoint(as.matrix(vertices_curvas))
-tin_network <- sf::st_triangulate(vertices_curvas)
-class(tin_network)
-
-tin_network <- sf::st_collection_extract(tin_network, type = c("POLYGON"))
-class(tin_network)
-tin_network <- sf::st_as_sf(tin_network)
-
-
-class(tin_network)
-sf::st_crs(tin_network) <- 31983
-sf::st_as_text(tin_network[1,]$x)
-
-# Salva tin como linhas.
-tin_network_linhas <- sf::st_cast(tin_network, "LINESTRING")
-
-class(tin_network_linhas)
-sf::st_as_text(tin_network_linhas[1,]$x)
-sf::write_sf(tin_network_linhas, paste0(pasta_dados, 'teste_tin.gpkg'))
-rm(tin_network_linhas)
-gc()
-# Cria um raster vazio.
-grid_area <- sf::st_make_grid(limites_subprefeitura, cellsize = c(10, 10), what = "centers")
-grid_area <- sf::st_as_sf(grid_area)
-ind_grid_area <- sf::st_intersects(grid_area, limites_subprefeitura)
-ind_grid_area <- lengths(ind_grid_area)
-grid_area <- grid_area[ind_grid_area > 0, ]
-tin_network_xy <- sf::st_zm(tin_network)
-
-triangulo <- sf::st_contains(tin_network_xy, sf::st_set_precision(grid_area,1))
-rm(tin_network_xy)
-gc()
-id_pontos_grid <- which(lengths(triangulo) > 0)
-pontos_grid <- lapply(id_pontos_grid, function(x) {return(data.frame(id_triangulo=x, ponto=grid_area[triangulo[[x]],1]))})
-
-pontos_grid <- data.table::rbindlist(pontos_grid)
-
-coord <- sf::st_coordinates(pontos_grid$x)
-coord <- cbind(coord, pontos_grid$id_triangulo)
-colnames(coord)[3] <- 'id_triangulo'
-
-resultado <- lapply (1:nrow(pontos_grid), function(i) {
-  id_triangulo <- coord[i,3]
-  pontos <- sf::st_coordinates(tin_network[id_triangulo,]$x)[1:3,1:3]#triangulo[id_triangulo,]$x)[1:3,1:3]
-  pontos
-  a <- (pontos[2,]-pontos[1,])
-  b <- (pontos[3,]-pontos[1,])
-  c <- c(a[2]*b[3]-a[3]*b[2], a[3]*b[1]-a[1]*b[3], a[1]*b[2]-a[2]*b[1])
+calcula_area_servico <- function(ponto_inicio) {
+  ponto_inicio <- sf::st_sfc(ponto_inicio, crs=31983)
+  service_area_buffer <- sf::st_buffer(ponto_inicio, 500)
+  logradouros_entorno_estacao <- sf::st_intersection(logradouros_subprefeitura, service_area_buffer)
+  # Resoluição dos "lixels" (equivalente em linha dos pixels)
+  logradouros_entorno_estacao_segmentos <- sf::st_segmentize(logradouros_entorno_estacao, 0.5)
   
-  x <- coord [i,1]
-  y <- coord[i, 2]
-  z <- (-c[1]*(x-pontos[1,1]) - c[2]*(y-pontos[1,2]))/c[3]+pontos[1,3]
-  return(z)
-})
+  linhas_log <- lapply(logradouros_entorno_estacao_segmentos$geometry, function (linha_interesse) {
+            coords <- sf::st_cast(sf::st_sfc(linha_interesse), 'POINT')
+            coords <- sf::st_coordinates(coords)
+            linhas <- coords %>% as.data.frame() %>% 
+              dplyr::mutate(linha=paste0('LINESTRING(',X, ' ', Y, ',', dplyr::lead(X), ' ', dplyr::lead(Y), ')'), .keep='none') %>% 
+              head(-1) %>% 
+              dplyr::mutate(geometry=sf::st_as_sfc(linha), keep='.none') %>% sf::st_as_sf()
+            return(linhas[,'geometry'])
+  })
+  linhas_log <- data.table::rbindlist(linhas_log)
+  class(linhas_log)
+  linhas_log <- sf::st_as_sf(linhas_log)
+  sf::st_crs(linhas_log) <- 31983
+  logradouros_entorno_estacao_segmentos <- linhas_log
 
-resultado <- unlist(resultado)
-pontos_grid <- cbind(pontos_grid, resultado)
-raster_output <- cbind(coord[,1:2], resultado)
-colnames(raster_output) <- c('X', 'Y', 'Z')
-raster_output
-raster_output <- terra::rast(raster_output, type="xyz", crs="epsg:31983")
+  rede_entorno <- sfnetworks::as_sfnetwork(logradouros_entorno_estacao_segmentos, directed = FALSE)
+  rede_entorno <- rede_entorno %>% sfnetworks::activate("edges") %>% dplyr::mutate(weight=sfnetworks::edge_length())
+  
+  id_no_mais_proximo_rede <- sf::st_nearest_feature(ponto_inicio, rede_entorno)
+  
+  rede_entorno = rede_entorno %>%
+    sfnetworks::activate("edges") %>%
+    dplyr::mutate(speed = units::set_units(5*1000/(3600), "m/s")) %>%
+    dplyr::mutate(time = weight / speed) 
+  
+  rede_entorno
+  rede_entorno = sfnetworks::activate(rede_entorno, "nodes")
+  dados_area_servico <- rede_entorno %>%
+    dplyr::filter(tidygraph::node_distance_from(id_no_mais_proximo_rede, 
+                                                weights = weight, 
+                                                algorithm = 'automatic') <= 500) 
+  
+  # area_servico_logradouros <- dados_area_servico %>% 
+  #                               sfnetworks::activate('edges') %>% 
+  #                               sf::st_geometry()
+  
+  area_servico_convex_hull <- dados_area_servico %>% 
+                                sf::st_geometry() %>%
+                                sf::st_combine() %>%
+                                sf::st_convex_hull()
+  
+  area_servico_logradouros <- sf::st_intersection (logradouros_entorno_estacao, 
+                                                area_servico_convex_hull)
+  return(list(sf::st_as_sf(area_servico_convex_hull), sf::st_as_sf(area_servico_logradouros)))
+}  
+```
 
-raster::plot(raster_output)
-#terra::writeRaster(raster_output, '~/Downloads/raster_tin_10m.tif', overwrite=TRUE)
+```{r}
+areas_servico <- lapply (estacoes_metro$geometry,FUN = calcula_area_servico)
+areas_servico_convex_hull <- lapply(areas_servico, function(area_servico) {sf::st_as_sf(area_servico[[1]])})
+areas_servico_convex_hull <- data.table::rbindlist(areas_servico_convex_hull)
+areas_servico_rede <- lapply(areas_servico, function(area_servico) {area_servico[[2]]})
 
-#sf::write_sf(tin_network, '~/Downloads/tin_network.gpkg')
-rm(tin_network)
+areas_servico_rede <- data.table::rbindlist(areas_servico_rede)
+areas_servico_rede <- sf::st_as_sf(areas_servico_rede)
+
+
+
+areas_servico_convex_hull <- sf::st_as_sf(areas_servico_convex_hull)
+
+mapview::mapview(subprefeitura_selecionada$ge_poligono,
+                 lwd=2,  col.regions='transparent',
+                 map.types='OpenStreetMap.Mapnik') + 
+  mapview::mapview(estacoes_metro, 
+                   col.regions='yellow',
+                   label = 'nm_estacao_metro_trem',
+                   #zcol='nm_estacao_metro_trem', 
+                   layer.name='Linha Amarela',
+                   popup='nm_estacao_metro_trem') +
+  mapview::mapview(areas_servico_rede, label = 'NOME_CAPS', 
+                   color='purple', lwd=2, layer.name='Rede Caminhada') +
+  mapview::mapview(areas_servico_convex_hull, zcol=NULL, #label=NULL, 
+                   alpha=0.5, lwd=2, layer.name='Service Area')
+
+```
+
+```{r}
+sf::st_write(areas_servico_convex_hull, 
+             '~/Downloads/convex_hull.gpkg',
+              delete_layer=TRUE)
+sf::st_write(areas_servico_rede, 
+             '~/Downloads/logradouros_area_servico.gpkg', 
+             delete_layer=TRUE)
+```
+
+## WMS
+
+```{r}
+#install.packages('tidyverse', 'sf', 'httr', 'ows4R')
+```
+
+WFS/WMS -\> sf no R Referência: https://tutorials.inbo.be/tutorials/spatial_wfs_services/
+
+```{r}
+library(magrittr)
+url_base_wms <- 'https://wms.geosampa.prefeitura.sp.gov.br/geoserver/geoportal/wms?'
+url_wms <- httr::parse_url(url_base_wms)
+
+url_client_wms <- ows4R::WFSClient$new(url_base_wms, serviceVersion = "1.3.0")
+# See layer names
+layers_disponiveis <- lapply(url_client_wms$getFeatureTypes(), function (x) {return(x$getName())})
+  
+layers_disponiveis <- unlist(layers_disponiveis) %>% as.data.frame()
+layers_disponiveis
+limites_bbox <- sf::st_bbox(sf::st_transform( subprefeitura_selecionada, 4326))
+# https://docs.geoserver.org/main/en/user/services/wms/reference.html#getmap
+url_wms$query <- list(service = 'wms',
+                  version = '1.3.0', 
+                  request = 'GetMap',
+                  layers = 'geoportal:densidade_demografica',
+                  styles = '',
+                  srsName = 'EPSG:4326',
+                  bbox = paste0(limites_bbox, collapse = ','),
+                  width='4000',
+                  height='4000',
+                  format='image/png')
+layer_url <- httr::build_url(url_wms)
+layer_url
+
+layer_png_pagina <- httr::GET(layer_url, httr::write_memory())
+layer_png_arquivo <- png::readPNG(layer_png_pagina$content)
+limites_plot <- sf::st_bbox(subprefeitura_selecionada)
+# Use o dev.off() em caso de erro de margens.
+dev.off()
+#par("mar")
+#par(mar=rep(2, 4))
+plot(c(limites_plot[1], limites_plot[3]), c(limites_plot[2], limites_plot[4]), type='n')
+rasterImage(layer_png_arquivo, limites_plot[1], limites_plot[2], limites_plot[3], limites_plot[4] )
+terra::lines(terra::vect(areas_servico_rede),  col="purple", lwd=2)
+terra::polys(terra::vect(areas_servico_convex_hull),  col="blue", lwd=2, alpha=0.5)
+terra::points(terra::vect(estacoes_metro),  col="yellow", cex=1.5)
+```
+
+```{r eval=FALSE}
+dev.print(pdf, '~/Downloads/mapa.pdf')
+dev.print(jpeg, '~/Downloads/mapa.jpg', width=1500)
+dev.print(png, '~/Downloads/mapa.png', width=4000)
+
+#dev.off()
+rm(url_client_wms)
 gc()
 ```
 
-## Gerar Modelo de Declividade a partir de MDT
+## WFS
 
-```{r eval=FALSE}
-#terra::writeRaster(mdt, '~/Downloads/mdt.tif', overwrite=TRUE)
-mdt_selecionado <- raster_output
-declividade <- terra::terrain(mdt_selecionado, v='slope')
-#terra::plot(terra::terrain(mdt_selecionado))
-declividade <- terra::mask(declividade, terra::vect(sf::st_buffer(limites_subprefeitura,30)), touches=FALSE)
-#terra::writeRaster(declividade, paste0(pasta_dados, 'declividade_10m.tif'), overwrite=TRUE)
-#mapa <- mapview::mapview(declividade, na.color="transparent", col.regions= RColorBrewer::brewer.pal(9, "Blues")) + 
-#  mapview::mapview(mdt, na.color="transparent") + 
-#  mapview::mapview(limites_subprefeitura, alpha.regions=0.0, lwd=2)
+```{r}
+url_base_wfs <- 'https://wfs.geosampa.prefeitura.sp.gov.br/geoserver/geoportal/wfs?'
+url_client_wfs <- ows4R::WFSClient$new(url_base_wfs, serviceVersion = "2.0.0")
+
+# Vamos preparar uma url codificada para usar posteriormente.
+url_wfs <- httr::parse_url(url_base_wfs)
+
+
+# See layer names
+layers_disponiveis <- lapply(url_client_wfs$getFeatureTypes(), function (x) {return(x$getName())})
+
+layers_disponiveis <- unlist(layers_disponiveis) %>% as.data.frame()
+layers_disponiveis
+
+
+limites_bbox <- sf::st_bbox( sf::st_buffer(subprefeitura_selecionada, 50))
+# https://docs.geoserver.org/main/en/user/services/wfs/reference.html#getmap
+url_wfs$query <- list(service = 'wfs',
+                      version = '2.0.0', 
+                      request = 'GetFeature',
+                      typeName = 'geoportal:densidade_demografica',
+                      bbox = paste0(limites_bbox, collapse = ','),
+                      srsName = 'EPSG:31983'
+                      )
+layer_url <- httr::build_url(url_wfs)
+layer_url
+
+layer_sf <- sf::read_sf(layer_url)
+names(layer_sf)
+class(layer_sf)
+sf::st_crs(layer_sf)$input
+sf::st_crs(layer_sf) <- 31983
+
+string_geom <- sf::st_as_text(layer_sf$ge_poligono)
+string_geom <- substr(string_geom, start = 15,nchar(string_geom)-1)
+geometria <- sf::st_as_sfc(string_geom, crs = 31983)
+
+geometria <- sf::st_cast(geometria, 'MULTILINESTRING')
+
+geometria <- sf::st_cast(geometria, 'MULTIPOLYGON')
+
+dados <- layer_sf %>% sf::st_drop_geometry()
+dados$geometry <- geometria
+dados <- sf::st_as_sf(dados)
+setores_subprefeitura <- sf::st_within(sf::st_centroid(dados), 
+                                       sf::st_buffer(subprefeitura_selecionada$ge_poligono, dist = 50))
+dados <- dados[lengths(setores_subprefeitura) > 0, ]
+
+mapview::mapview(sf::st_buffer(subprefeitura_selecionada$ge_poligono, dist = 0),
+                 lwd=2,  col.regions='transparent',
+                 map.types='OpenStreetMap.Mapnik') +
+  mapview::mapview(dados, zcol='qt_habitante_hectare') +
+  mapview::mapview(estacoes_metro, 
+                   col.regions='yellow',
+                   label = 'nm_estacao_metro_trem',
+                   #zcol='nm_estacao_metro_trem', 
+                   layer.name='Linha Amarela',
+                   popup='nm_estacao_metro_trem') +
+  mapview::mapview(areas_servico_rede, label = 'NOME_CAPS', 
+                   color='gray', lwd=2, layer.name='Rede Caminhada') +
+  mapview::mapview(areas_servico_convex_hull$x, zcol=NULL, #label=NULL, 
+                    col.regions='transparent', lwd=2, layer.name='Service Area')
 ```
 
-## Estatística zonal (análise zonal da declividade)
+## 3.4 Metadados do WFS
 
-```{r eval=FALSE}
-estatisticas_zonais_media <- terra::zonal(declividade, terra::vect(favelas_subprefeitura), fun="mean", na.rm = TRUE, touches = FALSE)
-names(estatisticas_zonais_media) <- 'media'
-estatisticas_zonais_max <- terra::zonal(declividade, terra::vect(favelas_subprefeitura), fun="max", na.rm = TRUE, touches = FALSE)
-names(estatisticas_zonais_max) <- 'max'
-estatisticas_zonais <- cbind(estatisticas_zonais_media, estatisticas_zonais_max)
-estatisticas_zonais <- cbind(favelas_subprefeitura, estatisticas_zonais)
-#mapa + mapview::mapview(estatisticas_zonais, na.color="transparent", col.regions= RColorBrewer::brewer.pal(9, "Blues"), zcol='media') + 
-#  mapview::mapview(estatisticas_zonais, na.color="transparent", col.regions= RColorBrewer::brewer.pal(9, "Reds"), zcol='max') +
-#  mapview::mapview(limites_subprefeitura, alpha.regions=0.0, lwd=2)
-```
+Aqui, descreve-se os parãmetros disponiveis para efetuar operações no WFS do servidor. GetCapabilities: Generates a metadata document describing a WFS service provided by server as well as valid WFS operations and parameters
 
-```{r eval=FALSE}
-rm(list=ls())
-gc()
+Metadados do sistema e das bases disponibilizadas.
+
+```{r}
+url_wfs$query <- list(service = 'wfs',
+                      version = '2.0.0', 
+                      request = 'GetCapabilities'
+)
+
+metadata_url <- httr::build_url(url_wfs)
+metadata_url
+
+metadata_pg <- httr::GET(metadata_url)
+metadata_pg$status_code
+metadata_xml <- httr::content(metadata_pg)
+class(metadata_xml)
+
+# Verifica se há namespaces.
+metadata_xml %>% xml2::xml_ns()
+# Remove os namespaces
+metadata_xml <- metadata_xml %>% xml2::xml_ns_strip()
+
+# Verifica os componentes da resposta, conforme descrito no manual.
+xml2::xml_name(metadata_xml)
+xml2::xml_name(xml2::xml_children(metadata_xml))
+componentes <- xml2::xml_children(metadata_xml)
+xml2::xml_name(componentes)
+dados_features_disponiveis <- xml2::xml_children(componentes[4])
+xml2::xml_name(dados_features_disponiveis[1])
+xml2::xml_name(xml2::xml_children(dados_features_disponiveis[1]))
+
+nomes_layers_acesso <- xml2::xml_text(xml2::xml_find_all(componentes, "//FeatureType/Name"))
+dados_layer <- xml2::xml_text(xml2::xml_find_all(componentes, "//FeatureType/Title"))
+descricao_layer <- xml2::xml_text(xml2::xml_find_all(componentes, "//FeatureType/Abstract"))
+
+descricao_features_disponiveis <- data.frame(dados_layer, nomes_layers_acesso, descricao_layer)
+
+head(descricao_features_disponiveis)
+
+# Metadados de uma feature específica.
+url_wfs$query <- list(service = 'wfs',
+                      version = '2.0.0', 
+                      request = 'DescribeFeatureType',
+                      typeName = 'geoportal:densidade_demografica'
+)
+metadata_feature_url <- httr::build_url(url_wfs)
+metadata_feature_pg <- httr::GET(metadata_feature_url, httr::write_memory())
+metadata_feature_xsd <- xml2::read_html(metadata_feature_pg$content)
+
+# Checando os tipos de dados na tabela de atributos.
+atributos <- xml2::xml_attr(xml2::xml_find_all(metadata_feature_xsd, "//*/sequence//element"), 'name')
+tipos_atributos <- xml2::xml_attr(xml2::xml_find_all(metadata_feature_xsd, "//*/sequence//element"), 'type')
+
+tabela_metadados <- data.frame(atributos, tipos_atributos)
+head(tabela_metadados)
 ```

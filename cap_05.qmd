@@ -1,5 +1,5 @@
 ---
-title: "Erros de topologia"
+title: "Manipulando Tabelas de Atributos"
 format: html
 execute:
   freeze: true  # never re-render during project render
@@ -9,6 +9,7 @@ number-sections: true
 ## Introdução
 
 ## Bibliotecas e dados utlizados nesta lição
+
 -   *sf*
 -   *dplyr*
 
@@ -20,71 +21,105 @@ Confira os *CRS's* dos dois conjuntos de dados e os compatibilize adequadamente.
 pasta_dados <- '../lab_04/dados/'
 
 limites_municipios <- sf::st_read(paste0(pasta_dados, 'OD-2017/Mapas-OD2017/Shape-OD2017/Municipios_2017_region.shp'))
-sf::st_crs(limites_municipios)$input
+#sf::st_crs(limites_municipios)$input
 limites_municipios <- sf::st_transform(limites_municipios, 31983)
 zonas_od <- sf::st_read(paste0(pasta_dados, 'OD-2017/Mapas-OD2017/Shape-OD2017/Zonas_2017_region.shp'))
-sf::st_crs(zonas_od)$input
-zonas_od <- sf::st_transform(zonas_od, 31983)
+pasta_dados <- '../lab_02/dados/'
+dados_saude <- sf::read_sf(paste0(pasta_dados, 'SAU2022_RMSP_CEM/SAU2022_RMSP_CEM.shp'), options = "ENCODING=latin1")
+#sf::st_crs(zonas_od)$input
+#zonas_od <- sf::st_transform(zonas_od, 31983)
 ```
 
-Caso esteja utilizando os dados sugeridos, primeiro você deve selecionar apenas um município para fazer os testes. A função *sort()* aplicada em um vetor, ordena seus elementos. No caso, são *strings* com os nomes dos municípios. 
+## Detalhando a Tabela de Atributos
 
-A seguir, apenas o município de São Paulo é selecionado. A notação para a seleção é simples e será revista em outro capítulo. Basta usar o operador de igualdade de comparação no vetor com o nome escolhido, como no exemplo. O resultado será um vetor *booleano* com *TRUE* onde a *string* coincide. Esse resultado é então usado para fazer a seleção das linhas desejadas no *dataframe*, carregando as geometrias correspondentes nas linhas.
+```{r}
+names(limites_municipios)
+class(limites_municipios$NomeMunici)
+```
+
+## Trabalhando com uma coluna da tabela de atributos
+
+### Acessando os Dados de uma Coluna
+
+Cada coluna é um vetor e pode ser acessada com o operador `$` após o nome da variável qu contém o *dataframe*.
+
+### Aplicando Funções em uma Coluna
+
+Para exemplificar, vamos usar a função *sort()* para ordenar os elementos de uma coluna. No caso, ela contém *strings* com os nomes dos municípios.
 
 ```{r}
 sort(limites_municipios$NomeMunici)
-limites_municipios_selecionado <- limites_municipios[limites_municipios$NomeMunici=="São Paulo", ]
 ```
 
-## Erros de Topologia
+## Seleção de colunas
 
+### Por índice
 
-### Checando erros de topologia no R
-
-Para checar os erros topológicos na base, a função *sf::st_is_valid()* é utilizada. Recebendo apenas o *dataframe* espacial como parâmetro, ela retorna um vetor *booleano* indicando se a linha corre
+Para selecionar uma coluna, baste usar o número da coluna na segunda posição entre colchetes. A lógica é `[linhas, colunas]` Observe que a geometria permanece atachada ao *dataframe*.
 
 ```{r}
-ind_geometrias_erro <- !sf::st_is_valid(zonas_od)
-zonas_od$erro <- ind_geometrias_erro
-plot(zonas_od[,c('erro', 'geometry')])
-zonas_od$motivo_erro <- sf::st_is_valid(zonas_od, reason=TRUE)
+limites_municipios[, 1]
 ```
 
-Se estiver usando os dados sugeridos, um erro de topologia deve surgir na tentativa de executar uma simples operação espacial entre vetores. Não se preocupe com entender a operação, caso  ainda não tenha tido contato prévio com os fundamentos de operações espaciais.
-
-```{r error = TRUE}
-zonas_od_selecao <- sf::st_intersection(zonas_od, limites_municipios_selecionado)
-```
-
-### Correção de erros de topologia.
-
-*sf::st_make_valid()*
+Para selecionar várias colunas, você pode usar vetores com os números desejados, em qualquer ordem, e podendo incluir repetições. Para colunas em sequência, a notação `i:n` pode ser utilizada.
 
 ```{r}
-zonas_od_corrigidas <- sf::st_make_valid(zonas_od)
-ind_geometrias_erro <- !sf::st_is_valid(zonas_od_corrigidas)
-zonas_od_corrigidas[ind_geometrias_erro,]
+limites_municipios[, c(1, 3)]
 ```
 
-Um truque que costuma funcionar, para polígonos, é utilizar a operação de *buffer* com parâmetro 0 como raio.
+### Por nome
+
+A lógica é similar à de seleção por números, mas os valores são *strings* com nomes das colunas.
+
+Para selecionar uma coluna o código fica:
 
 ```{r}
-zonas_od_corrigidas_buff <- sf::st_intersection(sf::st_buffer(zonas_od, 0), limites_municipios_selecionado)
-ind_geometrias_erro <- !sf::st_is_valid(zonas_od_corrigidas_buff)
-zonas_od_corrigidas_buff[ind_geometrias_erro,]
+limites_municipios[, 'NumeroMuni']
 ```
 
-Para verificar que a correção funcionou, faça o *clip* novamente e cheque a validade dos dados, como foi feito anteriormente.
+E no caso de várias colunas, um vetor pode ser usado:
 
-```{r eval=FALSE, include=FALSE}
-zonas_od_selecao <- sf::st_intersection(zonas_od_corrigidas, limites_municipios_selecionado)
-plot(zonas_od_selecao$geometry)
+```{r}
+limites_municipios[, c('NumeroMuni', 'NomeMunici')]
 ```
 
-Se estiver utilizando os dados sugeridos, verifique a tabela de atributos e observe que o intersection carrega algumas zonas indevidas, fora do município de São Paulo. Você consegue explicar?
+## Seleção por Atributos
+
+### Por Índice
+```{r}
+limites_municipios[1:10,]
+```
+
+### Por Expressão
+
+#### Exemplo 1 - Expressão Simples
+
+A seguir, apenas o município de São Paulo é selecionado. A notação para essa seleção é simples. Basta usar o operador de igualdade de comparação com o nome escolhido, como no exemplo. O resultado será um vetor *booleano* com *TRUE* onde a *string* coincide. Esse resultado é então usado para fazer a seleção das linhas desejadas no *dataframe*, carregando as geometrias correspondentes nas linhas.
+
+```{r}
+selecao_municipio <- limites_municipios$NomeMunici=="São Paulo"
+selecao_municipio
+limites_municipios_selecionado <- limites_municipios[selecao_municipio, ]
+limites_municipios_selecionado
+```
+
+#### Exemplo 2 - Expressão Complexa
+
+Com a base de dados de saúde, selecionamos somente os equipamentos públicos de alta complexidade.
+
+Usamos o operador `%in%` e os operadores booleanos `&` (e) e `|` (ou).
+
+```{r}
+saude_alta_complexidade <- dados_saude[(dados_saude$SEGMENTO %in% c('SAUGM', 'SAUGE'))
+                                       & (dados_saude$TIPO =='HOSP' | dados_saude$TIPO == 'PATEN'), ]
+head(saude_alta_complexidade)
+```
+
+
+## Exemplo - Calculando o Total de Matches em uma Coluna
 
 Com a tabela de atributos, cheque a quantidade de zonas em SP. O total de zonas em São Paulo pode ser obtido com o código a seguir.
 
 ```{r}
-sum(zonas_od_corrigidas$NomeMunici=='São Paulo')
+sum(zonas_od$NomeMunici=='São Paulo')
 ```

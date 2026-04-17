@@ -1,7 +1,9 @@
 ---
-title: "Agregação e Desagregacão Espacial (Mudança de Resolução e Sampling)"
+title: "Operações Aritméticas Entre Bandas"
 format: html
 execute:
   freeze: true  # never re-render during project render
-number-sections: true 
+number-sections: true  
 ---
+
+## Exemplo: Indices de Vegetação

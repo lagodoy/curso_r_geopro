@@ -1,7 +1,35 @@
 ---
-title: "Web Services"
+title: "Calculos com Atributos e Mapas Coropléticos"
 format: html
 execute:
   freeze: true  # never re-render during project render
 number-sections: true 
 ---
+
+
+## Inserção de dados externos e calculos com atributos
+
+Empregos por pessoa. 
+
+```{r}
+dados_gerais_od$emp_pessoa <- ifelse(dados_gerais_od$populacao != 0, 
+                                     dados_gerais_od$empregos/dados_gerais_od$populacao,
+                                     0)
+```
+
+## Mapas coropléticos
+
+Com o mapview
+
+```{r}
+summary(zonas_od_selecao$emp_pessoa)
+zonas_od_selecao$classe_emp_pessoa <- ifelse(zonas_od_selecao$emp_pessoa > 1,
+                                             '[1,00, 40,00[',
+                                             '[0,00, 1,00[')
+mapview::mapview(zonas_od_selecao, zcol='classe_emp_pessoa', col.regions=c('red', 'blue'), label=c('emp_pessoa') )
+plot(zonas_od_selecao["classe_emp_pessoa"], axes=TRUE, pal = c('red', 'blue'))
+plot(zonas_od_selecao["emp_pessoa"], axes=TRUE, pal = c('red', 'blue'), breaks = c(0,1,40))
+zonas_od_selecao$classe_emp_pessoa <- cut(zonas_od_selecao$emp_pessoa, breaks=c(0,1,40), right = FALSE)
+
+plot(zonas_od_selecao["classe_emp_pessoa"], axes=TRUE, pal = c('red', 'blue'))
+```
