@@ -39,7 +39,6 @@ mapa <- mapa + mapview::mapview(saude_subprefeitura, layer.name='Equipamentos de
 mapa
 ```
 
-
 ### Buffering
 
 ```{r}
@@ -75,8 +74,6 @@ mapa <-  mapa + mapview::mapview(favelas_fora_raio, color='red', col.regions='pi
 mapa
 ```
 
-
-
 Podemos usar outro approach, checando os polígonos que estão totalmente dentro do município.
 
 ```{r}
@@ -103,12 +100,5 @@ zonas_od_selecao <- zonas_od_corrigidas[lengths(lista_zonas_od_selecionadas) > 0
 plot(zonas_od_selecao$geometry)
 nrow(zonas_od_selecao)
 ```
-
-
-
-
-
-
-
 
 ## Dissolve
