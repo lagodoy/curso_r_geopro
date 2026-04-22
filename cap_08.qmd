@@ -36,3 +36,30 @@ sf::st_crs(dados_subprefeituras) <- 31983
 dados_saude <-  sf::st_transform(dados_saude, crs = 31983)
 ```
 
+Podemos usar outro approach, checando os polígonos que estão totalmente dentro do município.
+
+```{r}
+lista_zonas_od_selecionadas <- sf::st_within(zonas_od_corrigidas, limites_municipios_selecionado)
+zonas_od_selecao <- zonas_od_corrigidas[lengths(lista_zonas_od_selecionadas) > 0, ]
+plot(zonas_od_selecao$geometry)
+nrow(zonas_od_selecao)
+```
+
+Observe que ainda há falhas no processo. Para ajustar, podemos rerduzir ligeiramente os polígonos das zonas od, para que fiquem exatamente dentro dos limites do município. A função st_buffer pode ser utilizada para isso.
+
+```{r}
+lista_zonas_od_selecionadas <- sf::st_within(sf::st_buffer(zonas_od_corrigidas, -50), limites_municipios_selecionado)
+zonas_od_selecao <- zonas_od_corrigidas[lengths(lista_zonas_od_selecionadas) > 0, ]
+plot(zonas_od_selecao$geometry)
+nrow(zonas_od_selecao)
+```
+
+Outra opção é utilizar a função st_intersects, com o buffer negativo nas zonas od.
+
+```{r}
+lista_zonas_od_selecionadas <- sf::st_intersects( sf::st_buffer(zonas_od_corrigidas, -50), limites_municipios_selecionado)
+zonas_od_selecao <- zonas_od_corrigidas[lengths(lista_zonas_od_selecionadas) > 0, ]
+plot(zonas_od_selecao$geometry)
+nrow(zonas_od_selecao)
+```
+

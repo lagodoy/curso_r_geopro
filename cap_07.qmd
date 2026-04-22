@@ -13,7 +13,10 @@ number-sections: true
 -   *sf*
 -   *dplyr*
 
-Dados: Favelas, subprefeituras e de saúde, provenientes do CEM.
+Dados:
+
+-   Favelas, subprefeituras do GeoSampa
+-   Dados de equipamentos de saúde do CEM
 
 ## Preparação dos dados
 
@@ -30,21 +33,35 @@ sf::st_crs(dados_subprefeituras) <- 31983
 
 dados_saude <-  sf::st_transform(dados_saude, crs = 31983)
 ```
-Faça a seleção da geometria da subprefeitura do Butantã.
+
+Cheque os *CRS's* de todos os dados e efetue as transformações necessárias. Faça a seleção dos limites da subprefeitura do Butantã. 
+
+Também será necessário separar os equipamentos públicos de alta complexidade, filtrando pela tabela de atributo.
+
+Durante o tutorial, caso ocorra algum erro de topologia em uma operação, aplique as correções necessárias e a refaça.
+
 ```{r include=FALSE}
 dados_favelas
 dados_subprefeituras$sp_nome
 selecao_subprefeitura <- dados_subprefeituras$sp_nome=='BUTANTA'
-limites_subprefeitura <- dados_subprefeituras[selecao_subprefeitura, ]$geometry
+limites_subprefeitura <- dados_subprefeituras[selecao_subprefeitura, ]
 ```
 
 ## Operações de *overlay* (sobreposição)
 
 ### *Clip*
 
+*Clip* e *intersection* no contexto do *GIS* são normalmente distintos. O *clip* "fatia" as geometrias, mantendo os atributos do *layer* que é cortado com os limites do outro *layer*, ou retornando apenas as geometrias recortadas. 
+
+Para simular um *clip* do primeiro tipo citado, usamos apenas a geometria no lado direito da função `sf::st_intersection()`.
+
 ```{r}
-favelas_subprefeitura <- sf::st_intersection(dados_favelas, limites_subprefeitura)
+favelas_subprefeitura <- sf::st_intersection(dados_favelas, limites_subprefeitura$geometry)
+names(favelas_subprefeitura)
+head(favelas_subprefeitura)
 ```
+
+A função `sf::st_boundary()` extrai apenas os limites de um polígono, transformando-o em um tipo linha.
 
 ```{r}
 mapa <- mapview::mapview(sf::st_boundary(limites_subprefeitura), 
@@ -53,9 +70,15 @@ mapa <- mapa + mapview::mapview(favelas_subprefeitura, layer.name='Favelas')
 mapa
 ```
 
-
 ### *Intersection*
 
+O *intersection* trabalha nas geometrias da mesma forma do *clip*, porém ele mantém os atriubutos dos dois *dataframes* utilizados.
+
+
+```{r include=FALSE}
+saude_alta_complexidade <- dados_saude[(dados_saude$SEGMENTO %in% c('SAUGM', 'SAUGE'))
+                                       & (dados_saude$TIPO =='HOSP' | dados_saude$TIPO == 'PATEN'), ]
+```
 
 ```{r}
 saude_subprefeitura <- sf::st_intersection(saude_alta_complexidade, limites_subprefeitura)
@@ -63,20 +86,25 @@ saude_subprefeitura <- sf::st_intersection(saude_alta_complexidade, limites_subp
 
 ```{r eval=FALSE}
 mapa <- mapa + mapview::mapview(saude_subprefeitura, layer.name='Equipamentos de Saude Publicos de Alta Complexidade')
-mapa
 ```
 
 ### Buffering
 
+Basta passar como parâmetros o objeto espacial e o raio, na unidade de medida do CRS's. Para o SIRGAS 2000, usa-se metros.
+
 ```{r}
 saude_subprefeitura_buffer<- sf::st_buffer(saude_subprefeitura, 2000)
+```
 
+```{r}
 mapa <-  mapa +  mapview::mapview(sf::st_boundary(saude_subprefeitura_buffer), 
                                   layer.name='Alcance do equipamento - 2km')
 mapa
 ```
 
-### Intersecção
+### Exemplo
+
+Após uma sequência de operações bpasicas
 
 ```{r}
 favelas_cobertura <- sf::st_intersection(favelas_subprefeitura, saude_subprefeitura_buffer)
@@ -101,31 +129,25 @@ mapa <-  mapa + mapview::mapview(favelas_fora_raio, color='red', col.regions='pi
 mapa
 ```
 
-Podemos usar outro approach, checando os polígonos que estão totalmente dentro do município.
-
-```{r}
-lista_zonas_od_selecionadas <- sf::st_within(zonas_od_corrigidas, limites_municipios_selecionado)
-zonas_od_selecao <- zonas_od_corrigidas[lengths(lista_zonas_od_selecionadas) > 0, ]
-plot(zonas_od_selecao$geometry)
-nrow(zonas_od_selecao)
-```
-
-Observe que ainda há falhas no processo. Para ajustar, podemos rerduzir ligeiramente os polígonos das zonas od, para que fiquem exatamente dentro dos limites do município. A função st_buffer pode ser utilizada para isso.
-
-```{r}
-lista_zonas_od_selecionadas <- sf::st_within(sf::st_buffer(zonas_od_corrigidas, -50), limites_municipios_selecionado)
-zonas_od_selecao <- zonas_od_corrigidas[lengths(lista_zonas_od_selecionadas) > 0, ]
-plot(zonas_od_selecao$geometry)
-nrow(zonas_od_selecao)
-```
-
-Outra opção é utilizar a função st_intersects, com o buffer negativo nas zonas od.
-
-```{r}
-lista_zonas_od_selecionadas <- sf::st_intersects( sf::st_buffer(zonas_od_corrigidas, -50), limites_municipios_selecionado)
-zonas_od_selecao <- zonas_od_corrigidas[lengths(lista_zonas_od_selecionadas) > 0, ]
-plot(zonas_od_selecao$geometry)
-nrow(zonas_od_selecao)
-```
-
 ## Dissolve
+
+Para obter o efeito do *dissolve* no R, algumas alternativas são usadas. Caso não haja um atributo pelo qual fazer a união dos polígonos, basta usar as funções `sf::st_union()` e `sf::st_combine()`, que para este caso são similares.
+
+```{r include=FALSE}
+pasta_dados <- '../lab_04/dados/'
+
+limites_municipios <- sf::st_read(paste0(pasta_dados, 'OD-2017/Mapas-OD2017/Shape-OD2017/Municipios_2017_region.shp'))
+#sf::st_crs(limites_municipios)$input
+limites_municipios <- sf::st_transform(limites_municipios, 31983)
+zonas_od <- sf::st_read(paste0(pasta_dados, 'OD-2017/Mapas-OD2017/Shape-OD2017/Zonas_2017_region.shp'))
+zonas_od <- sf::st_buffer(zonas_od, 0)
+```
+
+```{r}
+library(magrittr)
+sf::st_union(zonas_od)
+sf::st_combine(zonas_od)
+```
+```{r}
+zonas_od %>% dplyr::group_by(NomeMunici) %>% dplyr::summarise(geometry=sf::st_union(geometry))
+```

@@ -15,7 +15,7 @@ number-sections: true
 
 ## Preparação dos dados
 
-Confira os *CRS's* dos dois conjuntos de dados e os compatibilize adequadamente. Se estiver utilizando os dados sugerios da pesquisa OD de São Paulo, use o *Sirgas 2000 UTM23S (EPSG:31983)*. Em nosso exemplo, os dados da zonas OD estão na variável *zonas_od* e os dos limites de municípios em *limites_municipios*.
+Confira os *CRS's* dos dois conjuntos de dados e os compatibilize adequadamente. Se estiver utilizando os dados sugerios da pesquisa OD de São Paulo, use o "*SIRGAS 2000 UTM23S (EPSG:31983)*". Em nosso exemplo, os dados das zonas OD estão na variável `zonas_od` e os dos limites de municípios em `limites_municipios`.
 
 ```{r include=FALSE}
 pasta_dados <- '../lab_04/dados/'
@@ -67,7 +67,7 @@ Para selecionar várias colunas, você pode usar vetores com os números desejad
 limites_municipios[, c(1, 3)]
 ```
 
-### Por nome
+### Por Nome
 
 A lógica é similar à de seleção por números, mas os valores são *strings* com nomes das colunas.
 
@@ -86,6 +86,7 @@ limites_municipios[, c('NumeroMuni', 'NomeMunici')]
 ## Seleção por Atributos
 
 ### Por Índice
+
 ```{r}
 limites_municipios[1:10,]
 ```
@@ -103,7 +104,7 @@ limites_municipios_selecionado <- limites_municipios[selecao_municipio, ]
 limites_municipios_selecionado
 ```
 
-#### Exemplo 2 - Expressão Complexa
+#### Exemplo 2 - Expressão combinada
 
 Com a base de dados de saúde, selecionamos somente os equipamentos públicos de alta complexidade.
 
@@ -115,10 +116,9 @@ saude_alta_complexidade <- dados_saude[(dados_saude$SEGMENTO %in% c('SAUGM', 'SA
 head(saude_alta_complexidade)
 ```
 
-
 ## Exemplo - Calculando o Total de Matches em uma Coluna
 
-Com a tabela de atributos, cheque a quantidade de zonas em SP. O total de zonas em São Paulo pode ser obtido com o código a seguir.
+Com a tabela de atributos, vamos checar a quantidade de zonas do município de São Paulo.
 
 ```{r}
 sum(zonas_od$NomeMunici=='São Paulo')
