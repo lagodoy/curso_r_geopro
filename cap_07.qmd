@@ -129,9 +129,7 @@ mapa <-  mapa + mapview::mapview(favelas_fora_raio, color='red', col.regions='pi
 mapa
 ```
 
-## Dissolve
-
-Para obter o efeito do *dissolve* no R, algumas alternativas são usadas. Caso não haja um atributo pelo qual fazer a união dos polígonos, basta usar as funções `sf::st_union()` e `sf::st_combine()`, que para este caso são similares.
+## Agregando Geometrias
 
 ```{r include=FALSE}
 pasta_dados <- '../lab_04/dados/'
@@ -143,11 +141,53 @@ zonas_od <- sf::st_read(paste0(pasta_dados, 'OD-2017/Mapas-OD2017/Shape-OD2017/Z
 zonas_od <- sf::st_buffer(zonas_od, 0)
 ```
 
+Aqui teremos alguma polêmica. O usual no contexto de *GIS* é que a operação de *dissolve* junte polígonos, eliminando os limites internos. Já a operação de *union*, normalmente, recebe dois *layers*, criando um único *layer* com todas as geometrias dois dois *layers* de entrada.
+
+Alternativamente, existem softwares em que o *union* pode ser aplicado nas geometrias de um mesmo layer, mas com comportamentos distintos na saída. Um deles é o de criar um *layer* em que a união adiciona novos polígonos quando há porções distintas de geometrias que se sobrepõe. Outro comportamento é o de apenas transformar todas as geometrias contidas no *layer* em uma única geometria, onde as partes estão separadas. Por exemplo, um *layer* de polígonos vai retornar um *layer* com um único multipolígono contendo todos os polígonos.
+
+
+Para agregar geometrias no R, algumas alternativas são usadas. Caso não haja um atributo pelo qual fazer a união dos polígonos, basta usar diretamente as funções `sf::st_union()` ou `sf::st_combine()`, que para este caso são similares, mas com comportamentos diferentes, dependendo do caso.
+
+### *Union*
+
+Para emular uma uinão dentro do mesmo layer é usado o `sf::st_combine()` não tenta eliminar as bordas internas. Dependendo dos dados, comportamentos estranhos podem ocorrer.
+
+```{r}
+library(magrittr)
+
+sf::st_combine(zonas_od$geometry)
+
+class(sf::st_combine(zonas_od$geometry))
+plot(sf::st_combine(zonas_od$geometry))
+```
+
+### *Dissolve*
+
+Já a função `sf::st_union()` elimina as bordas internas.
+
 ```{r}
 library(magrittr)
 sf::st_union(zonas_od)
-sf::st_combine(zonas_od)
+
+class(sf::st_union(zonas_od))
+plot(sf::st_union(zonas_od))
 ```
+
+
+O *dissolve* pode ser feito por grupos de polígonos, agrupando-os de acordo com o valor de uma variável. No *R*, uma opção é utilizar a biblioteca *dplyr* para agrupar por coluna e em seguida. Esse modo também permite totalizar valores associados com as geometrias agrupadas.
+
 ```{r}
-zonas_od %>% dplyr::group_by(NomeMunici) %>% dplyr::summarise(geometry=sf::st_union(geometry))
+zonas_munic <- zonas_od %>% dplyr::group_by(NomeMunici) %>% 
+                  dplyr::summarise(area_total=sum(Area_ha_2), geometry=sf::st_combine(geometry))
+head(zonas_munic )
+zonas_munic
+plot(zonas_munic)
+```
+
+```{r}
+zonas_munic <- zonas_od %>% dplyr::group_by(NomeMunici) %>% 
+                  dplyr::summarise(area_total=sum(Area_ha_2), geometry=sf::st_union(geometry))
+head(zonas_munic )
+zonas_munic
+plot(zonas_munic)
 ```
