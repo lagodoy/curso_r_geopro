@@ -10,13 +10,13 @@ number-sections: true
 
 ## Bibliotecas e dados utlizados nesta lição
 
--   *sf*
--   *dplyr*
+- *sf*
+- *dplyr*
 
 Dados:
 
--   Favelas, subprefeituras do GeoSampa
--   Dados de equipamentos de saúde do CEM
+- Zonas OD
+- Limites municipais
 
 ## Preparação dos dados
 
@@ -34,7 +34,7 @@ sf::st_crs(dados_subprefeituras) <- 31983
 dados_saude <-  sf::st_transform(dados_saude, crs = 31983)
 ```
 
-Cheque os *CRS's* de todos os dados e efetue as transformações necessárias. Faça a seleção dos limites da subprefeitura do Butantã. 
+Cheque os *CRS's* de todos os dados e efetue as transformações necessárias. Faça a seleção dos limites da subprefeitura do Butantã.
 
 Também será necessário separar os equipamentos públicos de alta complexidade, filtrando pela tabela de atributo.
 
@@ -51,7 +51,7 @@ limites_subprefeitura <- dados_subprefeituras[selecao_subprefeitura, ]
 
 ### *Clip*
 
-*Clip* e *intersection* no contexto do *GIS* são normalmente distintos. O *clip* "fatia" as geometrias, mantendo os atributos do *layer* que é cortado com os limites do outro *layer*, ou retornando apenas as geometrias recortadas. 
+*Clip* e *intersection* no contexto do *GIS* são normalmente distintos. O *clip* "fatia" as geometrias, mantendo os atributos do *layer* que é cortado com os limites do outro *layer*, ou retornando apenas as geometrias recortadas.
 
 Para simular um *clip* do primeiro tipo citado, usamos apenas a geometria no lado direito da função `sf::st_intersection()`.
 
@@ -73,7 +73,6 @@ mapa
 ### *Intersection*
 
 O *intersection* trabalha nas geometrias da mesma forma do *clip*, porém ele mantém os atriubutos dos dois *dataframes* utilizados.
-
 
 ```{r include=FALSE}
 saude_alta_complexidade <- dados_saude[(dados_saude$SEGMENTO %in% c('SAUGM', 'SAUGE'))
@@ -134,7 +133,6 @@ Aqui teremos alguma polêmica. O usual no contexto de *GIS* é que a operação 
 
 Alternativamente, existem softwares em que o *union* pode ser aplicado nas geometrias de um mesmo layer, mas com comportamentos distintos na saída. Um deles é o de criar um *layer* em que a união adiciona novos polígonos quando há porções distintas de geometrias que se sobrepõe. Outro comportamento é o de apenas transformar todas as geometrias contidas no *layer* em uma única geometria, onde as partes estão separadas. Por exemplo, um *layer* de polígonos vai retornar um *layer* com um único multipolígono contendo todos os polígonos.
 
-
 Para agregar geometrias no R, algumas alternativas são usadas. Caso não haja um atributo pelo qual fazer a união dos polígonos, basta usar diretamente as funções `sf::st_union()` ou `sf::st_combine()`, que para este caso são similares, mas com comportamentos diferentes, dependendo do caso.
 
 ### *Union*
@@ -153,6 +151,7 @@ plot(sf::st_combine(zonas_od$geometry))
 ### *Dissolve*
 
 #### Sem Critério para Agrupamento
+
 Neste caso, a função usada é a `sf::st_union()`, que elimina as bordas internas.
 
 ```{r}

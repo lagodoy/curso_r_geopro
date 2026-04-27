@@ -1,5 +1,5 @@
 ---
-title: "Seleção de Dados"
+title: "Seleção por Localização"
 format: html
 execute:
   freeze: true  # never re-render during project render
@@ -8,57 +8,77 @@ number-sections: true
 
 ## Introdução
 
+No Capîtulo 5, vimos como fazer uma seleção de dados utilizando filtros nas tabelas de atributos. Aqui, veremos como fazer uma seleção espacial, baseada em funções que usam a localização das geometrias dos dados.
+
+
 ## Bibliotecas e dados utlizados nesta lição
+
+- *sf*
+- *dplyr*
+
+Dados:
+
+- Favelas, subprefeituras do GeoSampa
+- Dados de equipamentos de saúde do CEM
 
 ## Preparação dos dados
 
-Leitura dos dados
+Os dados usados nos exemplos deste tutorial são os resultados do Capítulo 6, incluindo a seleção um município de interesse a correção de erros topológicos.
+
+Prepare os dados conforme o capítulo anterior.
 
 ```{r include=FALSE}
-pasta_dados <- '../lab_02/dados/'
+pasta_dados <- '../lab_04/dados/'
 
-dados_favelas <- sf::read_sf(paste0(pasta_dados, 'SIRGAS_SHP_favela/SIRGAS_SHP_favela.shp'))
-dados_subprefeituras <- sf::read_sf(paste0(pasta_dados, 'SIRGAS_SHP_subprefeitura/SIRGAS_SHP_subprefeitura.shp'))
-#dados_saude <- sf::read_sf(paste0(pasta_dados, 'SAU2022_RMSP_CEM/SAU2022_RMSP_CEM.shp'))#, options = "ENCODING=latin1"))
-dados_saude <- sf::read_sf(paste0(pasta_dados, 'SAU2022_RMSP_CEM/SAU2022_RMSP_CEM.shp'), options = "ENCODING=latin1")
+limites_municipios <- sf::st_read(paste0(pasta_dados, 'OD-2017/Mapas-OD2017/Shape-OD2017/Municipios_2017_region.shp'))
+sf::st_crs(limites_municipios)$input
+limites_municipios <- sf::st_transform(limites_municipios, 31983)
+limites_municipios <- sf::st_buffer(limites_municipios, 0)
+zonas_od <- sf::st_read(paste0(pasta_dados, 'OD-2017/Mapas-OD2017/Shape-OD2017/Zonas_2017_region.shp'))
+zonas_od <- sf::st_transform(zonas_od, 31983)
+zonas_od <- sf::st_buffer(zonas_od, 0)
 ```
 
-Checagem dos CRS's e atribuiççao ou transformaççao quando necessaŕio.
 
 ```{r include=FALSE}
-sf::st_crs(dados_favelas)$input
-sf::st_crs(dados_subprefeituras)$input
-sf::st_crs(dados_saude)$input
-
-sf::st_crs(dados_favelas) <- 31983
-sf::st_crs(dados_subprefeituras) <- 31983
-
-dados_saude <-  sf::st_transform(dados_saude, crs = 31983)
+sort(limites_municipios$NomeMunici)
+limites_municipios_selecionado <- limites_municipios[limites_municipios$NomeMunici=="São Paulo", ]
 ```
 
-Podemos usar outro approach, checando os polígonos que estão totalmente dentro do município.
+## *Within*
+
+Com nossos dados, vamos checar os polígonos que estão totalmente dentro do município.
 
 ```{r}
-lista_zonas_od_selecionadas <- sf::st_within(zonas_od_corrigidas, limites_municipios_selecionado)
-zonas_od_selecao <- zonas_od_corrigidas[lengths(lista_zonas_od_selecionadas) > 0, ]
+lista_zonas_od_selecionadas <- sf::st_within(zonas_od, limites_municipios_selecionado)
+zonas_od_selecao <- zonas_od[lengths(lista_zonas_od_selecionadas) > 0, ]
 plot(zonas_od_selecao$geometry)
 nrow(zonas_od_selecao)
 ```
 
-Observe que ainda há falhas no processo. Para ajustar, podemos rerduzir ligeiramente os polígonos das zonas od, para que fiquem exatamente dentro dos limites do município. A função st_buffer pode ser utilizada para isso.
+Observe que há falhas no processo. Para ajustar, podemos reduzir ligeiramente os polígonos das zonas od, para que fiquem exatamente dentro dos limites do município. A função st_buffer pode ser utilizada para isso.
 
 ```{r}
-lista_zonas_od_selecionadas <- sf::st_within(sf::st_buffer(zonas_od_corrigidas, -50), limites_municipios_selecionado)
-zonas_od_selecao <- zonas_od_corrigidas[lengths(lista_zonas_od_selecionadas) > 0, ]
+lista_zonas_od_selecionadas <- sf::st_within(sf::st_buffer(zonas_od, -50), limites_municipios_selecionado)
+zonas_od_selecao <- zonas_od[lengths(lista_zonas_od_selecionadas) > 0, ]
 plot(zonas_od_selecao$geometry)
 nrow(zonas_od_selecao)
 ```
 
-Outra opção é utilizar a função st_intersects, com o buffer negativo nas zonas od.
+Outra opção é utilizar a função `st_intersects`, com o buffer negativo nas zonas od.
 
 ```{r}
-lista_zonas_od_selecionadas <- sf::st_intersects( sf::st_buffer(zonas_od_corrigidas, -50), limites_municipios_selecionado)
-zonas_od_selecao <- zonas_od_corrigidas[lengths(lista_zonas_od_selecionadas) > 0, ]
+lista_zonas_od_selecionadas <- sf::st_intersects( sf::st_buffer(zonas_od -50), limites_municipios_selecionado)
+zonas_od_selecao <- zonas_od[lengths(lista_zonas_od_selecionadas) > 0, ]
+plot(zonas_od_selecao$geometry)
+nrow(zonas_od_selecao)
+```
+
+## *Covers*
+
+```{r}
+lista_zonas_od_selecionadas <- sf::st_covered(limites_municipios_selecionado, zonas_od)
+zonas_od_selecao <- zonas_od[lengths(lista_zonas_od_selecionadas) > 0, ]
 plot(zonas_od_selecao$geometry)
 nrow(zonas_od_selecao)
 ```

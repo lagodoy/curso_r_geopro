@@ -10,10 +10,10 @@ number-sections: true
 
 ## Bibliotecas e dados utlizados nesta lição
 
--   *mapview*
--   *sf*
--   *terra*
--   *ggplot2*
+- *mapview*
+- *sf*
+- *terra*
+- *ggplot2*
 
 A sugestão é encontrar uma base de dados no GeoSampa no formato *shapefile*.
 

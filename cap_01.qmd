@@ -10,8 +10,8 @@ number-sections: true
 
 ## Bibliotecas e dados utlizados nesta lição
 
--   *sf* para trabalhar com dados vetoriais
--   *terra* para trabalhar com dados do tipo *raster*
+- *sf* para trabalhar com dados vetoriais
+- *terra* para trabalhar com dados do tipo *raster*
 
 Como exemplo, fica a sugestão de encontrar uma base de dados no *GeoSampa* que esteja no formato *shapefile* ou *gpkg* (base com dados vetoriais) e um arquivo do tipo *raster* no formato *geotiff*  no *topodata* do *INPE*.
 

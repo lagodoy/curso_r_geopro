@@ -10,8 +10,8 @@ number-sections: true
 
 ## Bibliotecas e dados utlizados nesta lição
 
--   *sf*
--   *dplyr*
+- *sf*
+- *dplyr*
 
 ## Preparação dos dados
 

@@ -10,8 +10,8 @@ number-sections: true
 
 ## Bibliotecas e dados utlizados nesta lição
 
--   *sf*
--   *terra*
+- *sf*
+- *terra*
 
 A sugestão para acompanhar este capítulo é utilizar dados das mesmas fontes do Capítulo 1.
 

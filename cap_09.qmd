@@ -8,7 +8,7 @@ number-sections: true
 
 ## Inserção de dados externos
 
-```{r eval = FALSE} 
+```{r eval = FALSE}
 nomes_colunas <- c('zona', 'nome', 'domicilios', 'familias', 'populacao', 'matriculas_ecolares', 'empregos', 'automoveis_particulares', 'viagens_produzidas', 'viagens_atraidas', 'area_ha')
 
 dados_gerais_od <- readxl::read_xlsx(paste0(pasta_dados, 'OD-2017/Tabelas-OD2017/Tab01_OD2017.xlsx'), col_names=nomes_colunas, skip = 9, n_max=nrow(zonas_od_corrigidas))

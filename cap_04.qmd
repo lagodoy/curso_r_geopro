@@ -10,8 +10,8 @@ number-sections: true
 
 ## Bibliotecas e dados utlizados nesta lição
 
--   *mapview*
--   *sf*
+- *mapview*
+- *sf*
 
 Você deve encontrar uma base de dados no formato *shapefile*. Sugiro o uso do *GeoSampa*, onde algumas bases já vêm com imperfeições que serão úteis neste tutorial.
 
