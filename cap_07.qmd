@@ -104,7 +104,7 @@ mapa
 
 ### Exemplo
 
-Após uma sequência de operações bpasicas
+Após a sequência de operações básicas, podemos observar as regiões de favelas dentro do *buffer* gerado pelas coordenadas dos equipamentos de saúde.
 
 ```{r}
 favelas_cobertura <- sf::st_intersection(favelas_subprefeitura, saude_subprefeitura_buffer)
@@ -116,19 +116,6 @@ mapa <-  mapa + mapview::mapview(favelas_cobertura, label='Dentro',
 mapa
 ```
 
-### Difference
-
-```{r}
-favelas_fora_raio <- sf::st_difference(favelas_subprefeitura, 
-                                       sf::st_union(saude_subprefeitura_buffer))
-```
-
-```{r}
-mapa <-  mapa + mapview::mapview(favelas_fora_raio, color='red', col.regions='pink', 
-                                 label='Fora', layer.name='Favelas fora de área de alcance de equipamento')
-mapa
-```
-
 ## Agregando Geometrias
 
 ```{r include=FALSE}
@@ -137,8 +124,10 @@ pasta_dados <- '../lab_04/dados/'
 limites_municipios <- sf::st_read(paste0(pasta_dados, 'OD-2017/Mapas-OD2017/Shape-OD2017/Municipios_2017_region.shp'))
 #sf::st_crs(limites_municipios)$input
 limites_municipios <- sf::st_transform(limites_municipios, 31983)
+limites_municipios <- sf::st_buffer(limites_municipios, 0)
 zonas_od <- sf::st_read(paste0(pasta_dados, 'OD-2017/Mapas-OD2017/Shape-OD2017/Zonas_2017_region.shp'))
 zonas_od <- sf::st_buffer(zonas_od, 0)
+zonas_od <- sf::st_transform(zonas_od, 31983)
 ```
 
 Aqui teremos alguma polêmica. O usual no contexto de *GIS* é que a operação de *dissolve* junte polígonos, eliminando os limites internos. Já a operação de *union*, normalmente, recebe dois *layers*, criando um único *layer* com todas as geometrias dois dois *layers* de entrada.
@@ -150,7 +139,7 @@ Para agregar geometrias no R, algumas alternativas são usadas. Caso não haja u
 
 ### *Union*
 
-Para emular uma uinão dentro do mesmo layer é usado o `sf::st_combine()` não tenta eliminar as bordas internas. Dependendo dos dados, comportamentos estranhos podem ocorrer.
+Para emular uma união dentro do mesmo *layer* é usado o método `sf::st_combine()`, que não elimina as bordas internas do resultado da agregação.
 
 ```{r}
 library(magrittr)
@@ -163,7 +152,8 @@ plot(sf::st_combine(zonas_od$geometry))
 
 ### *Dissolve*
 
-Já a função `sf::st_union()` elimina as bordas internas.
+#### Sem Critério para Agrupamento
+Neste caso, a função usada é a `sf::st_union()`, que elimina as bordas internas.
 
 ```{r}
 library(magrittr)
@@ -173,21 +163,37 @@ class(sf::st_union(zonas_od))
 plot(sf::st_union(zonas_od))
 ```
 
+#### Com Critério para Agrupamento
 
 O *dissolve* pode ser feito por grupos de polígonos, agrupando-os de acordo com o valor de uma variável. No *R*, uma opção é utilizar a biblioteca *dplyr* para agrupar por coluna e em seguida. Esse modo também permite totalizar valores associados com as geometrias agrupadas.
 
 ```{r}
 zonas_munic <- zonas_od %>% dplyr::group_by(NomeMunici) %>% 
-                  dplyr::summarise(area_total=sum(Area_ha_2), geometry=sf::st_combine(geometry))
-head(zonas_munic )
-zonas_munic
+                  dplyr::summarise(area_total=sum(Area_ha_2), geometry=sf::st_union(geometry))
+head(zonas_munic)
 plot(zonas_munic)
 ```
 
-```{r}
+O que ocorre se você trocar o `st_union` pleo `st_combine`?
+
+```{r include=FALSE, eval=FALSE}
 zonas_munic <- zonas_od %>% dplyr::group_by(NomeMunici) %>% 
-                  dplyr::summarise(area_total=sum(Area_ha_2), geometry=sf::st_union(geometry))
+                  dplyr::summarise(area_total=sum(Area_ha_2), geometry=sf::st_combine(geometry))
 head(zonas_munic )
-zonas_munic
 plot(zonas_munic)
+```
+
+### Difference
+
+Para observar porções de polígonos fora de determinadas regiões de interesse, usamos a operação *difference*, com a função `st_difference()`. No exemplo a seguir, os `buffers` são agrupados com um `dissolve`.
+
+```{r}
+favelas_fora_raio <- sf::st_difference(favelas_subprefeitura, 
+                                       sf::st_union(saude_subprefeitura_buffer))
+```
+
+```{r}
+mapa <-  mapa + mapview::mapview(favelas_fora_raio, color='red', col.regions='pink', 
+                                 label='Fora', layer.name='Favelas fora de área de alcance de equipamento')
+mapa
 ```
