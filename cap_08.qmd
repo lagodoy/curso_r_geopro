@@ -10,16 +10,17 @@ number-sections: true
 
 No Capîtulo 5, vimos como fazer uma seleção de dados utilizando filtros nas tabelas de atributos. Aqui, veremos como fazer uma seleção espacial, baseada em funções que usam a localização das geometrias dos dados.
 
+As funções para seleção por localização retornam valores binários, dizendo se a relação é satisfeita ou não pelas feições dentro de cada tabela. Na biblioteca *sf*, cada função se refere a um predicado espacial, seguindo um padrão onde o nome do predicado está na função. Por exemplo: `st_within()` se refere ao predicado *within*. Para os que já conhecem as operações espaciais, é fácil deduzir quais as funções, já para os que não conhecem, recomendo utilizar alguma fonte bibliográfica ou até mesmo a *internet* para compreender o assunto.
 
 ## Bibliotecas e dados utlizados nesta lição
 
-- *sf*
-- *dplyr*
+-   *sf*
+-   *dplyr*
 
 Dados:
 
-- Favelas, subprefeituras do GeoSampa
-- Dados de equipamentos de saúde do CEM
+-   Favelas, subprefeituras do GeoSampa
+-   Dados de equipamentos de saúde do CEM
 
 ## Preparação dos dados
 
@@ -39,13 +40,26 @@ zonas_od <- sf::st_transform(zonas_od, 31983)
 zonas_od <- sf::st_buffer(zonas_od, 0)
 ```
 
-
 ```{r include=FALSE}
-sort(limites_municipios$NomeMunici)
 limites_municipios_selecionado <- limites_municipios[limites_municipios$NomeMunici=="São Paulo", ]
 ```
 
-## *Within*
+
+## Sobreposição
+
+Para verificar se as geometrias de um objeto sobrepões as de outro.
+
+```{r}
+lista_zonas_od_selecionadas <- sf::st_covered(limites_municipios_selecionado, zonas_od)
+zonas_od_selecao <- zonas_od[lengths(lista_zonas_od_selecionadas) > 0, ]
+plot(zonas_od_selecao$geometry)
+nrow(zonas_od_selecao)
+```
+
+
+## Contenção
+
+Para verificar se as geometrias de um objeto estão dentro ou fora do de outro.
 
 Com nossos dados, vamos checar os polígonos que estão totalmente dentro do município.
 
@@ -68,18 +82,37 @@ nrow(zonas_od_selecao)
 Outra opção é utilizar a função `st_intersects`, com o buffer negativo nas zonas od.
 
 ```{r}
-lista_zonas_od_selecionadas <- sf::st_intersects( sf::st_buffer(zonas_od -50), limites_municipios_selecionado)
+lista_zonas_od_selecionadas <- sf::st_intersects( sf::st_buffer(zonas_od, -50), limites_municipios_selecionado)
 zonas_od_selecao <- zonas_od[lengths(lista_zonas_od_selecionadas) > 0, ]
 plot(zonas_od_selecao$geometry)
 nrow(zonas_od_selecao)
 ```
 
-## *Covers*
+## Proximidade
 
 ```{r}
-lista_zonas_od_selecionadas <- sf::st_covered(limites_municipios_selecionado, zonas_od)
+lista_zonas_od_selecionadas <- sf::st_is_within_distance(zonas_od, limites_municipios_selecionado, 5000)
 zonas_od_selecao <- zonas_od[lengths(lista_zonas_od_selecionadas) > 0, ]
 plot(zonas_od_selecao$geometry)
 nrow(zonas_od_selecao)
 ```
 
+Observe que as zonas dentro da capital foram selecionadas. Como você eliminaria as zonas internas com operações espaciais?
+
+
+
+## Relação Topológica
+
+```{r}
+lista_zonas_od_selecionadas <- sf::st_touches(zonas_od, limites_municipios_selecionado)
+zonas_od_selecao <- zonas_od[lengths(lista_zonas_od_selecionadas) > 0, ]
+plot(zonas_od_selecao$geometry)
+nrow(zonas_od_selecao)
+```
+
+```{r}
+lista_zonas_od_selecionadas <- sf::st_touches(zonas_od, limites_municipios_selecionado)
+zonas_od_selecao <- zonas_od[lengths(lista_zonas_od_selecionadas) > 0, ]
+plot(zonas_od_selecao$geometry)
+nrow(zonas_od_selecao)
+```
