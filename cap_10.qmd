@@ -6,10 +6,9 @@ execute:
 number-sections: true 
 ---
 
+## Cálculos com Atributos
 
-## Inserção de dados externos e calculos com atributos
-
-Empregos por pessoa. 
+Empregos por pessoa.
 
 ```{r}
 dados_gerais_od$emp_pessoa <- ifelse(dados_gerais_od$populacao != 0, 
@@ -17,7 +16,7 @@ dados_gerais_od$emp_pessoa <- ifelse(dados_gerais_od$populacao != 0,
                                      0)
 ```
 
-## Mapas coropléticos
+## Mapas Coropléticos
 
 Com o mapview
 
