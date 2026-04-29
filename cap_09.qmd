@@ -6,7 +6,41 @@ execute:
 number-sections: true 
 ---
 
-## Inserção de dados externos
+## Introdução
+
+
+## Bibliotecas e dados utlizados nesta lição
+
+-   *sf*
+-   *dplyr*
+
+Dados:
+
+Dados da pesquisa OD limitados no município de São Paulo.
+
+## Preparação dos dados
+
+Prepare os dados conforme o capítulo anterior.
+
+```{r include=FALSE}
+pasta_dados <- '../lab_04/dados/'
+
+limites_municipios <- sf::st_read(paste0(pasta_dados, 'OD-2017/Mapas-OD2017/Shape-OD2017/Municipios_2017_region.shp'))
+sf::st_crs(limites_municipios)$input
+limites_municipios <- sf::st_transform(limites_municipios, 31983)
+limites_municipios <- sf::st_buffer(limites_municipios, 0)
+zonas_od <- sf::st_read(paste0(pasta_dados, 'OD-2017/Mapas-OD2017/Shape-OD2017/Zonas_2017_region.shp'))
+zonas_od <- sf::st_transform(zonas_od, 31983)
+zonas_od <- sf::st_buffer(zonas_od, 0)
+```
+
+```{r include=FALSE}
+limites_municipios_selecionado <- limites_municipios[limites_municipios$NomeMunici=="São Paulo", ]
+```
+
+## Inserção de dados de tabela
+
+Aqui, vamos utilizar dados adicionais que não estão em arquivos vetoriais. O exemplo a ser utilizado carrega os dados de uma planilha do *excel* que acompanha os dados da pesquisa OD.
 
 ```{r eval = FALSE}
 nomes_colunas <- c('zona', 'nome', 'domicilios', 'familias', 'populacao', 'matriculas_ecolares', 'empregos', 'automoveis_particulares', 'viagens_produzidas', 'viagens_atraidas', 'area_ha')
@@ -16,14 +50,19 @@ dados_gerais_od <- readxl::read_xlsx(paste0(pasta_dados, 'OD-2017/Tabelas-OD2017
 
 ## Join
 
-```{r eval = FALSE}
+`merge()` está no *R* base.
+
+```{r}
 names(zonas_od_selecao)
 names(dados_gerais_od)
 zonas_od_selecao <- merge(zonas_od_selecao, dados_gerais_od, by.x = 'NumeroZona', by.y='zona')
 ```
 
-Outra opção é utilizar um pacote de manipulação de dados, como dplyr.
+Outra opção para juntar duas tabelas é utilizar um pacote de manipulação de dados, como *dplyr*. Neste caso, os nomes das funções seguem padrão similar ao da linguagem *SQL*.
 
 ```{r eval = FALSE}
 zonas_od_selecao <- dplyr::left_join(zonas_od_selecao, dados_gerais_od, by= c('NumeroZona' = 'zona'))
 ```
+
+
+## Join Espacial
