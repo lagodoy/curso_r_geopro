@@ -116,3 +116,11 @@ zonas_od_selecao <- zonas_od[lengths(lista_zonas_od_selecionadas) > 0, ]
 plot(zonas_od_selecao$geometry)
 nrow(zonas_od_selecao)
 ```
+
+## Filtro por Localização
+
+A diferença aqui é que separamos com apenas uma função a seleção feita em uma tabela, sem utilizar códigos adicionais.
+
+```{r}
+lista_zonas_od_selecionadas <- sf::st_filter(sf::st_centroid(zonas_od), limites_municipios_selecionado, join=st_within)
+```

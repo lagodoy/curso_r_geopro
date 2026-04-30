@@ -8,11 +8,10 @@ number-sections: true
 
 ## Introdução
 
-
 ## Bibliotecas e dados utlizados nesta lição
 
--   *sf*
--   *dplyr*
+- *sf*
+- *dplyr*
 
 Dados:
 
@@ -50,6 +49,8 @@ dados_gerais_od <- readxl::read_xlsx(paste0(pasta_dados, 'OD-2017/Tabelas-OD2017
 
 ## Join
 
+### Join com *R* base
+
 `merge()` está no *R* base.
 
 ```{r}
@@ -58,11 +59,27 @@ names(dados_gerais_od)
 zonas_od_selecao <- merge(zonas_od_selecao, dados_gerais_od, by.x = 'NumeroZona', by.y='zona')
 ```
 
+### Join com *dplyr*
+
 Outra opção para juntar duas tabelas é utilizar um pacote de manipulação de dados, como *dplyr*. Neste caso, os nomes das funções seguem padrão similar ao da linguagem *SQL*.
 
 ```{r eval = FALSE}
 zonas_od_selecao <- dplyr::left_join(zonas_od_selecao, dados_gerais_od, by= c('NumeroZona' = 'zona'))
 ```
 
-
 ## Join Espacial
+
+Uma função do *sf* que funcionaria para fazer um *join* espacial é a `st_intersection()`, já vista no Capítulo 7.
+
+```{r}
+lista_zonas_od_selecionadas <- sf::st_intersection(zonas_od, limites_municipios_selecionado)
+names(lista_zonas_od_selecionadas)
+```
+
+Agora veremos uma opção com mais flexibilidade, a função `sf::st_join()`.
+
+Atenção ao parâmetro *left*.
+
+```{r}
+lista_zonas_od_selecionadas <- sf::st_join(sf::st_centroid(zonas_od), limites_municipios_selecionado, join=st_within, left=FALSE)
+```
