@@ -31,23 +31,24 @@ limites_municipios <- sf::st_buffer(limites_municipios, 0)
 zonas_od <- sf::st_read(paste0(pasta_dados, 'OD-2017/Mapas-OD2017/Shape-OD2017/Zonas_2017_region.shp'))
 zonas_od <- sf::st_transform(zonas_od, 31983)
 zonas_od <- sf::st_buffer(zonas_od, 0)
-```
 
-```{r include=FALSE}
 limites_municipios_selecionado <- limites_municipios[limites_municipios$NomeMunici=="São Paulo", ]
+zonas_od_selecao <- sf::st_filter(sf::st_centroid(zonas_od), limites_municipios_selecionado, join=st_within)
 ```
 
 ## Inserção de dados de tabela
 
 Aqui, vamos utilizar dados adicionais que não estão em arquivos vetoriais. O exemplo a ser utilizado carrega os dados de uma planilha do *excel* que acompanha os dados da pesquisa OD.
 
-```{r eval = FALSE}
+```{r}
 nomes_colunas <- c('zona', 'nome', 'domicilios', 'familias', 'populacao', 'matriculas_ecolares', 'empregos', 'automoveis_particulares', 'viagens_produzidas', 'viagens_atraidas', 'area_ha')
 
 dados_gerais_od <- readxl::read_xlsx(paste0(pasta_dados, 'OD-2017/Tabelas-OD2017/Tab01_OD2017.xlsx'), col_names=nomes_colunas, skip = 9, n_max=nrow(zonas_od))
 ```
 
 ## Join
+
+### Join com *R* base
 
 `merge()` está no *R* base.
 
@@ -57,6 +58,8 @@ names(dados_gerais_od)
 zonas_od_selecao <- merge(zonas_od_selecao, dados_gerais_od, by.x = 'NumeroZona', by.y='zona')
 ```
 
+### Join com *dplyr*
+
 Outra opção para juntar duas tabelas é utilizar um pacote de manipulação de dados, como *dplyr*. Neste caso, os nomes das funções seguem padrão similar ao da linguagem *SQL*.
 
 ```{r eval = FALSE}
@@ -64,3 +67,34 @@ zonas_od_selecao <- dplyr::left_join(zonas_od_selecao, dados_gerais_od, by= c('N
 ```
 
 ## Join Espacial
+
+Uma função do *sf* que funcionaria para fazer um *join* espacial é a `st_intersection()`, já vista no Capítulo 7.
+
+```{r}
+zonas_od_selecionadas <- sf::st_intersection(zonas_od, limites_municipios_selecionado)
+head(zonas_od_selecionadas)
+nrow(zonas_od_selecionadas)
+```
+
+Agora veremos uma opção com mais flexibilidade, a função `sf::st_join()`.
+
+Atenção ao parâmetro *left*.
+
+```{r}
+zonas_od_selecionadas <- sf::st_join(sf::st_centroid(zonas_od[, c('NumeroZona')]), limites_municipios_selecionado[,c('Area_ha')], join=sf::st_within, left=FALSE, suffix=c('', '_municipio'))
+head(zonas_od_selecionadas)
+nrow(zonas_od_selecionadas)
+names(zonas_od_selecionadas)
+```
+
+Como ficamos com as centróides, agora podemos recuperar as geometrias originais dos polígonos para incluir no resultado do *join* espacial. Basta utilizar um join por tabela, removendo a geometria do objeto `zonas_od_selecionadas`. Note que a após o `merge()`, o resultado é um *dataframe* comum, porém com a coluna com as geometrias. A função `sf::st_as_sf()` converte esse *dataframe* para uma versão espacial.
+
+```{r}
+zonas_od_final <- merge(sf::st_drop_geometry(zonas_od_selecionadas), zonas_od, by.x = 'NumeroZona', by.y='NumeroZona')
+zonas_od_final <- sf::st_as_sf(zonas_od_final)
+head(zonas_od_final)
+nrow(zonas_od_final)
+names(zonas_od_final)
+plot(zonas_od_final[,'Area_ha_2'])
+```
+
