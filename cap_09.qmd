@@ -8,7 +8,6 @@ number-sections: true
 
 ## Introdução
 
-
 ## Bibliotecas e dados utlizados nesta lição
 
 -   *sf*
@@ -45,7 +44,7 @@ Aqui, vamos utilizar dados adicionais que não estão em arquivos vetoriais. O e
 ```{r eval = FALSE}
 nomes_colunas <- c('zona', 'nome', 'domicilios', 'familias', 'populacao', 'matriculas_ecolares', 'empregos', 'automoveis_particulares', 'viagens_produzidas', 'viagens_atraidas', 'area_ha')
 
-dados_gerais_od <- readxl::read_xlsx(paste0(pasta_dados, 'OD-2017/Tabelas-OD2017/Tab01_OD2017.xlsx'), col_names=nomes_colunas, skip = 9, n_max=nrow(zonas_od_corrigidas))
+dados_gerais_od <- readxl::read_xlsx(paste0(pasta_dados, 'OD-2017/Tabelas-OD2017/Tab01_OD2017.xlsx'), col_names=nomes_colunas, skip = 9, n_max=nrow(zonas_od))
 ```
 
 ## Join
@@ -63,6 +62,5 @@ Outra opção para juntar duas tabelas é utilizar um pacote de manipulação de
 ```{r eval = FALSE}
 zonas_od_selecao <- dplyr::left_join(zonas_od_selecao, dados_gerais_od, by= c('NumeroZona' = 'zona'))
 ```
-
 
 ## Join Espacial
