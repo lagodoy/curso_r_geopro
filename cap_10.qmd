@@ -6,29 +6,77 @@ execute:
 number-sections: true 
 ---
 
+## Introdução
+
+## Bibliotecas e dados utlizados nesta lição
+
+-   *sf*
+-   *dplyr*
+
+Dados:
+
+Dados da pesquisa OD limitados no município de São Paulo.
+
+## Preparação dos dados
+
+Prepare os dados conforme o capítulo anterior.
+
+```{r include=FALSE}
+pasta_dados <- '../lab_04/dados/'
+
+limites_municipios <- sf::st_read(paste0(pasta_dados, 'OD-2017/Mapas-OD2017/Shape-OD2017/Municipios_2017_region.shp'))
+sf::st_crs(limites_municipios)$input
+limites_municipios <- sf::st_transform(limites_municipios, 31983)
+limites_municipios <- sf::st_buffer(limites_municipios, 0)
+zonas_od <- sf::st_read(paste0(pasta_dados, 'OD-2017/Mapas-OD2017/Shape-OD2017/Zonas_2017_region.shp'))
+zonas_od <- sf::st_transform(zonas_od, 31983)
+zonas_od <- sf::st_buffer(zonas_od, 0)
+
+limites_municipios_selecionado <- limites_municipios[limites_municipios$NomeMunici=="São Paulo", ]
+zonas_od_selecao <- sf::st_filter(sf::st_centroid(zonas_od), limites_municipios_selecionado, join=st_within)
+nomes_colunas <- c('zona', 'nome', 'domicilios', 'familias', 'populacao', 'matriculas_ecolares', 'empregos', 'automoveis_particulares', 'viagens_produzidas', 'viagens_atraidas', 'area_ha')
+
+dados_gerais_od <- readxl::read_xlsx(paste0(pasta_dados, 'OD-2017/Tabelas-OD2017/Tab01_OD2017.xlsx'), col_names=nomes_colunas, skip = 9, n_max=nrow(zonas_od))
+```
+
+
+```{r include=FALSE}}
+zonas_od_selecao <- merge(zonas_od_selecao, dados_gerais_od, by.x = 'NumeroZona', by.y='zona')
+zonas_od <- merge(sf::st_drop_geometry(zonas_od_selecao), zonas_od, by.x = 'NumeroZona', by.y='NumeroZona')
+zonas_od <- sf::st_as_sf(zonas_od)
+```
+
 ## Cálculos com Atributos
 
 Empregos por pessoa.
 
 ```{r}
-dados_gerais_od$emp_pessoa <- ifelse(dados_gerais_od$populacao != 0, 
-                                     dados_gerais_od$empregos/dados_gerais_od$populacao,
+zonas_od$emp_pessoa <- ifelse(zonas_od$populacao != 0, 
+                                     zonas_od$empregos/zonas_od$populacao,
                                      0)
 ```
 
 ## Mapas Coropléticos
 
-Com o mapview
+Com o *mapview*.
 
 ```{r}
-summary(zonas_od_selecao$emp_pessoa)
-zonas_od_selecao$classe_emp_pessoa <- ifelse(zonas_od_selecao$emp_pessoa > 1,
+summary(zonas_od$emp_pessoa)
+zonas_od$classe_emp_pessoa <- ifelse(zonas_od$emp_pessoa > 1,
                                              '[1,00, 40,00[',
                                              '[0,00, 1,00[')
-mapview::mapview(zonas_od_selecao, zcol='classe_emp_pessoa', col.regions=c('red', 'blue'), label=c('emp_pessoa') )
-plot(zonas_od_selecao["classe_emp_pessoa"], axes=TRUE, pal = c('red', 'blue'))
-plot(zonas_od_selecao["emp_pessoa"], axes=TRUE, pal = c('red', 'blue'), breaks = c(0,1,40))
-zonas_od_selecao$classe_emp_pessoa <- cut(zonas_od_selecao$emp_pessoa, breaks=c(0,1,40), right = FALSE)
+```
 
-plot(zonas_od_selecao["classe_emp_pessoa"], axes=TRUE, pal = c('red', 'blue'))
+```{r}
+mapview::mapview(sf::st_zm(zonas_od), zcol='classe_emp_pessoa', col.regions=c('red', 'blue'), label=c('emp_pessoa') )
+```
+
+```{r}
+plot(zonas_od["classe_emp_pessoa"], axes=TRUE, pal = c('red', 'blue'))
+plot(zonas_od["emp_pessoa"], axes=TRUE, pal = c('red', 'blue'), breaks = c(0,1,40))
+zonas_od$classe_emp_pessoa <- cut(zonas_od$emp_pessoa, breaks=c(0,1,40), right = FALSE)
+```
+
+```{r}
+plot(zonas_od["classe_emp_pessoa"], axes=TRUE, pal = c('red', 'blue'))
 ```

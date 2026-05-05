@@ -10,8 +10,8 @@ number-sections: true
 
 ## Bibliotecas e dados utlizados nesta lição
 
-- *sf* para trabalhar com dados vetoriais
-- *terra* para trabalhar com dados do tipo *raster*
+-   *sf* para trabalhar com dados vetoriais
+-   *terra* para trabalhar com dados do tipo *raster*
 
 Como exemplo, fica a sugestão de encontrar uma base de dados no *GeoSampa* que esteja no formato *shapefile* ou *gpkg* (base com dados vetoriais) e um arquivo do tipo *raster* no formato *geotiff*  no *topodata* do *INPE*.
 
@@ -32,9 +32,9 @@ caminho_vetor_entrada <- paste0(pasta_dados, 'SAD69-96_SHP_cortico/SAD69-96_SHP_
 dados_vetor <- sf::read_sf(caminho_vetor_entrada, options = "ENCODING=latin1")
 ```
 
-No R, a função *class()* é utilizada para checar o tipo de dado armazenado em uma variável.
+No R, a função `class()` é utilizada para checar o tipo de dado armazenado em uma variável.
 
-Como estamos trabalhando com um objeto do tipo *sf*, que é um *dataframe* com capacidade de armazenar dados geográficos, a função *head()* pode ser usada utilizada para listar as primeiras linhas da tabela de atributos associada aos nossos dados espaciais.
+Como estamos trabalhando com um objeto do tipo *sf*, que é um *dataframe* com capacidade de armazenar dados geográficos, a função `head()` pode ser usada utilizada para listar as primeiras linhas da tabela de atributos associada aos nossos dados espaciais.
 
 ```{r}
 class(dados_vetor)
@@ -47,7 +47,7 @@ head(dados_vetor)
 caminho_vetor_saida <- '~/Downloads/vetor_teste.gpkg'
 ```
 
-A função *sf::write_sf()* salva um *dataframe* espacial em um arquivo em disco. Os parâmetros básicos são, na ordem, o objeto que será salvo e o caminho completo com o nome do arquivo. A função trata automaticamente os dados de acordo com o tipo de arquivo (extensão) fornecido no segundo parâmetro. Também há a possibilidade de usar uma conexão com um banco de dados para salvar o objeto em uma tabela.
+A função `sf::write_sf()` salva um *dataframe* espacial em um arquivo em disco. Os parâmetros básicos são, na ordem, o objeto que será salvo e o caminho completo com o nome do arquivo. A função trata automaticamente os dados de acordo com o tipo de arquivo (extensão) fornecido no segundo parâmetro. Também há a possibilidade de usar uma conexão com um banco de dados para salvar o objeto em uma tabela.
 
 ```{r}
 sf::write_sf(dados_vetor, caminho_vetor_saida)

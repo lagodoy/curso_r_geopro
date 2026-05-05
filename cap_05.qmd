@@ -10,8 +10,8 @@ number-sections: true
 
 ## Bibliotecas e dados utlizados nesta lição
 
-- *sf*
-- *dplyr*
+-   *sf*
+-   *dplyr*
 
 Utilizaremos os dados das zonas OD e os limites municipais que os acompanham.
 
