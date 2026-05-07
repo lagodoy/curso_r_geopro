@@ -58,29 +58,41 @@ zonas_od$emp_pessoa <- ifelse(zonas_od$populacao != 0,
 
 ## Mapas Coropléticos
 
-
-
+### Separação em Classes
 ```{r}
 summary(zonas_od$emp_pessoa)
+```
+
+Separando classes manualmente.
+
+```{r}
 zonas_od$classe_emp_pessoa <- ifelse(zonas_od$emp_pessoa > 1,
                                              '[1,00, 40,00[',
                                              '[0,00, 1,00[')
 ```
 
-Com o *mapview*.
+Separando classes com a função `cut()`.
+
+```{r}
+zonas_od$classe_emp_pessoa <- cut(zonas_od$emp_pessoa, breaks=c(0,1,40), right = FALSE)
+```
+
+### *Mapview*
 
 Use a função `sf::st_zm()` para eliminar a terceira dimensão antes de passar o objeto para o *mapview*.
 
 ```{r}
-mapview::mapview(sf::st_zm(zonas_od), zcol='classe_emp_pessoa', col.regions=c('red', 'blue'), label=c('emp_pessoa') )
+mapview::mapview(sf::st_zm(zonas_od), zcol='classe_emp_pessoa', 
+                 col.regions=c('red', 'blue'), label=c('emp_pessoa') )
 ```
+
+###  Com o *R* base
 
 ```{r}
 plot(zonas_od["classe_emp_pessoa"], axes=TRUE, pal = c('red', 'blue'))
-plot(zonas_od["emp_pessoa"], axes=TRUE, pal = c('red', 'blue'), breaks = c(0,1,40))
-zonas_od$classe_emp_pessoa <- cut(zonas_od$emp_pessoa, breaks=c(0,1,40), right = FALSE)
 ```
 
 ```{r}
-plot(zonas_od["classe_emp_pessoa"], axes=TRUE, pal = c('red', 'blue'))
+plot(zonas_od["emp_pessoa"], axes=TRUE, pal = c('red', 'blue'), breaks = c(0, 1, 40))
+
 ```
