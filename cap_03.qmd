@@ -10,10 +10,10 @@ number-sections: true
 
 ## Bibliotecas e dados utlizados nesta lição
 
-- *mapview*
-- *sf*
-- *terra*
-- *ggplot2*
+-   *mapview*
+-   *sf*
+-   *terra*
+-   *ggplot2*
 
 A sugestão é encontrar uma base de dados no GeoSampa no formato *shapefile*.
 
@@ -49,6 +49,8 @@ ggplot2::ggplot(data = dados_vetor) +
 ```
 
 ### Visualização de arquivo vetorial com *mapview*
+
+Um lembrete importante: o *mapview* apenas trabalha com geometrias 2D.
 
 ```{r}
 mapview::mapview(dados_vetor)

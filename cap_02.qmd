@@ -39,21 +39,44 @@ str(dados_vetor)
 
 ### Colunas com Geometrias
 
-Observe que a coluna *geometry*, onde estão armazenados os dados das geometrias associadas, aparece com o tipo *sfc_POLYGON*. O termo *sfc* significa "*simple feature (geometry list ) column*". Já o restante da palavra indica que há polígonos na lista.
+Observe que a coluna *geometry*, onde estão armazenados os dados das geometrias associadas, aparece com o tipo *sfc_POLYGON*. O termo *sfc* significa "*simple feature (geometry list) column*". Já o restante da palavra indica que há polígonos na lista.
 
-### Casting (conversão de tipos)
+```{r}
+sf::st_geometry_type(limites_municipios, by_geometry = FALSE)
+```
 
-As funções com nomes similares a *as.tipo()* são as utilizadas e a substituição pode ser feita diretamente sobrescrevendo a coluna desejada. No exemplo a seguir, uma coluna do tipo numérica é convertida para *string*.
+Algumas vezes é preciso saber a quantidade de dimensões das geometrias. Exibindo o *dataframe* em tela é possível obter essa informação na linha com o campo de nome *Dimension*. No exemplo a seguir, temos uma geometria 3D (incluindo a dimensão Z).
+
+```{r}
+head(limites_municipios)
+```
+
+### Casting (Conversão de Tipos)
+
+#### Atributos Não-Geométricos
+
+As funções com nomes similares a `as.tipo()` são as utilizadas e a substituição pode ser feita diretamente sobrescrevendo a coluna desejada. No exemplo a seguir, uma coluna do tipo numérica é convertida para *string*.
 
 ```{r}
 dados_vetor$ct_id <- as.character(dados_vetor$ct_id)
 str(dados_vetor)
 ```
 
-Já no caso de uma geometria, conversões são feitas com funções específicas. Por exemplo, caso as geometrias possuam a dimensão Z, em alguns casos pode ser necessário eliminá-la. Para fazer isso, basta usar a função `sf::st_sm()`.
+#### Geometrias
 
-sf::st_geometry_type(limites_municipios)
-sf::st_sm(limites_municipios)
+Já no caso de uma geometria, conversões são feitas com funções específicas. Por exemplo, caso as geometrias possuam a dimensão Z, em alguns casos pode ser necessário eliminá-la. Para fazer isso, basta usar a função `sf::st_zm()`.
+
+```{r}
+sf::st_zm(limites_municipios, drop=TRUE, what="ZM")$geometry
+```
+
+Utilizando `drop=FALSE` e `what='Z` em uma coluna com dados 2D, é possível adicionar uma terceira dimensão nas geometrias.
+
+Já para converter o tipo de geometria na coluna, basta aplicar `sf::st_cast()` diretamente no *dataframe* para criar um outro com a coluna de geometria transformada e os mesmos atributos. Tabém é possível aplicar a função diretamente na coluna, mas neste caso o resultado será um vetor.
+
+```{r}
+sf::st_cast(limites_municipios$geometry, 'LINESTRING')
+```
 
 ## Raster
 
@@ -65,7 +88,7 @@ raster <- terra::rast(caminho_raster_entrada)
 
 ### Verificando os tipos de dados
 
-*datatype()* verifica o tipo dos dados dos pixels de um *raster*. O tipo exibido é o tipo de dado armazenado em disco, quando um arquivo é lido pelo *terra*. Caso o objeto tenha sido criado em memória, o *terra* armazena os dados como *double*.
+`datatype()` verifica o tipo dos dados dos pixels de um *raster*. O tipo exibido é o tipo de dado armazenado em disco, quando um arquivo é lido pelo *terra*. Caso o objeto tenha sido criado em memória, o *terra* armazena os dados como *double*.
 
 ```{r}
 terra::datatype(raster)
@@ -91,9 +114,9 @@ raster_categorico <- raster%/%1000
 
 Para trabalhar com dados categóricos, devemos ter uma associação entre valores inteiros armazenados e as categorias. Um arquivo de *metadados* auxiliar deve conter essas informações.
 
-Caso as informações (ou o arquivo) não existam, *terra::as.factor()* pode ser utilizado para fazer a conversão de tipo no *R*.
+Caso as informações (ou o arquivo) não existam, `terra::as.factor()` pode ser utilizado para fazer a conversão de tipo no *R*.
 
-*terra::is.factor()* checa se os dados são categóricos. Note o antes e depois no bloco de códigos a seguir.
+`terra::is.factor()` checa se os dados são categóricos. Note o antes e depois no bloco de códigos a seguir.
 
 ```{r}
 terra::is.factor(raster_categorico)
@@ -101,11 +124,11 @@ raster_categorico <- terra::as.factor(raster_categorico)
 terra::is.factor(raster_categorico)
 ```
 
-*terra::levels()* exibe a tabela com a associação de classe-valor criada com *terra::as.factor()*.
+`terra::levels()` exibe a tabela com a associação de classe-valor criada com `terra::as.factor()`.
 
 Um *dataframe* com a associação do valor e da categoria (*level*) então deve ser relacionado com o objeto *SpatRaster* criado.
 
-O *dataframe* precisa ter a ordem das colunas correta: primeira coluna inteiros com os valores e segunda coluna a categoria desejada. Em *levels()* (sem o nome do pacote), usando o *SpatRaster* como parâmetro, atribuimos o *dataframe* criado. É uma notação peculiar do *R*.
+O *dataframe* precisa ter a ordem das colunas correta: primeira coluna inteiros com os valores e segunda coluna a categoria desejada. Em `levels()` (sem o nome do pacote), usando o *SpatRaster* como parâmetro, atribuimos o *dataframe* criado. É uma notação peculiar do *R*.
 
 ```{r}
 terra::levels(raster_categorico)

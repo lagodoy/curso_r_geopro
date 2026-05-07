@@ -58,7 +58,7 @@ zonas_od$emp_pessoa <- ifelse(zonas_od$populacao != 0,
 
 ## Mapas Coropléticos
 
-Com o *mapview*.
+
 
 ```{r}
 summary(zonas_od$emp_pessoa)
@@ -66,6 +66,10 @@ zonas_od$classe_emp_pessoa <- ifelse(zonas_od$emp_pessoa > 1,
                                              '[1,00, 40,00[',
                                              '[0,00, 1,00[')
 ```
+
+Com o *mapview*.
+
+Use a função `sf::st_zm()` para eliminar a terceira dimensão antes de passar o objeto para o *mapview*.
 
 ```{r}
 mapview::mapview(sf::st_zm(zonas_od), zcol='classe_emp_pessoa', col.regions=c('red', 'blue'), label=c('emp_pessoa') )

@@ -92,7 +92,6 @@ Como ficamos com as centróides, agora podemos recuperar as geometrias originais
 ```{r}
 zonas_od_final <- merge(sf::st_drop_geometry(zonas_od_selecionadas), zonas_od, by.x = 'NumeroZona', by.y='NumeroZona')
 zonas_od_final <- sf::st_as_sf(zonas_od_final)
-head(zonas_od_final)
 nrow(zonas_od_final)
 names(zonas_od_final)
 plot(zonas_od_final[,'Area_ha_2'])
