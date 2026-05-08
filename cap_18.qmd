@@ -10,7 +10,13 @@ number-sections: true
 
 ## Bibliotecas e dados utlizados nesta lição
 
-## Software e dados necessários para a prática de laboratório
+-   *sf*
+-   *dplyr*
+-   *tidyverse*
+-   *httr*
+-   *ows4R*
+
+## Preparação dos dados
 
 ```{r}
 pasta_dados <- '../lab_05/dados/'
