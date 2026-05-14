@@ -6,12 +6,12 @@ execute:
 number-sections: true 
 ---
 
-
 ## Introdução
 
 Uma referência online com diversos recursos pode ser encontrada aqui: https://tutorials.inbo.be/tutorials/spatial_wfs_services/
 
-https://docs.geoserver.org/main/en/user/services/wms/reference.html
+Já a referência sobre a a API do WMS/WFS pode ser encontrada em: 
+https://docs.geoserver.org/main/en/user/services/
 
 ## Bibliotecas e dados utlizados nesta lição
 
@@ -21,9 +21,12 @@ https://docs.geoserver.org/main/en/user/services/wms/reference.html
 -   *httr*
 -   *ows4R*
 
-
+Nesta lição serão utilizados os dados com limites das subprefeituras de São Paulo.
 
 ## Preparação dos dados
+
+Selecione uma subprefeitura para trabalhar.
+
 ```{r include=FALSE}
 pasta_dados <- '../lab_05/dados/'
 
@@ -34,26 +37,38 @@ subprefeitura_selecionada <- limites_subprefeituras[limites_subprefeituras$nm_su
 
 ## WMS
 
+Caso necessário, instale as bibliotecas que serão utilizadas durante a lição:
+
 ```{r include=FALSE}
 install.packages('tidyverse', 'sf', 'httr', 'ows4R')
 ```
 
+O primeiro passo é obter uma URL de um servidor WMS. Neste tutorial, o servidor utilizado é o do GeoSampa.
+`parse_url()` transforma a URL dada em texto para um objeto do tipo *url*, com os atributos organizados de acordo com o esperado pela biblioteca *ows4R*.
 
 ```{r}
 library(magrittr)
 url_base_wms <- 'https://wms.geosampa.prefeitura.sp.gov.br/geoserver/geoportal/wms?'
 url_wms <- httr::parse_url(url_base_wms)
+```
 
+O método `WFSClient$new()` cria uma conexão com o servidor da URL dada. O parâmetro `serviceVersion` indica a versão que deve ser utilizada na conexão. Esse tipo de informação deve ser obtido com o fornecedor do serviço. Outras opções podem ser encontradas na documentação.
+
+```{r}
 url_client_wms <- ows4R::WFSClient$new(url_base_wms, serviceVersion = "1.3.0")
 ```
 
-O código abaixo extrai os nomes dos layers. Utilizando o `lapply` no resultado de `url_client_wms$getFeatureTypes()`
+O código abaixo extrai os nomes dos *layers*. `getFeatureTypes()` obtém uma lista com detalhes dos *layers* disponíveis na conexão. Utilizando o `lapply` no resultado de `url_client_wms$getFeatureTypes()`, é possível extrair os nomes dos *layers* disponíveis com o método `getName()` em cada elemento da lista.
+
+Na sequência a lista é transformada em um *dataframe* para exibição.
 
 ```{r}
 layers_disponiveis <- lapply(url_client_wms$getFeatureTypes(), function (x) {return(x$getName())})
 layers_disponiveis <- unlist(layers_disponiveis) %>% as.data.frame()
-layers_disponiveis
+head(layers_disponiveis)
 ```
+
+Para delimitar nossa região de interesse, criamos um bbox com os limites da subprefeitura. Observe a transformação para o *EPSG:4326*, pois é o compatível com o serviço.
 
 ```{r}
 limites_bbox <- sf::st_bbox(sf::st_transform( subprefeitura_selecionada, 4326))
@@ -177,7 +192,7 @@ mapview::mapview(sf::st_buffer(subprefeitura_selecionada$ge_poligono, dist = 0),
 
 ## Metadados do WFS
 
-Aqui, descreve-se os parãmetros disponiveis para efetuar operações no WFS do servidor. GetCapabilities: Generates a metadata document describing a WFS service provided by server as well as valid WFS operations and parameters
+Aqui, descreve-se os parãmetros disponiveis para efetuar operações no WFS do servidor. *GetCapabilities*: Generates a metadata document describing a WFS service provided by server as well as valid WFS operations and parameters
 
 Metadados do sistema e das bases disponibilizadas.
 
